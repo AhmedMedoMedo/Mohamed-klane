@@ -6,10 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mohamed El-Kilany Warehouse</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- مكتبات Firebase الأساسية (الإصدار 8 الأسهل للربط المباشر) -->
+    <!-- مكتبات Firebase الأساسية -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
@@ -17,17 +17,13 @@
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Cairo', 'sans-serif'],
-                        en: ['Inter', 'sans-serif'],
-                    },
+                    fontFamily: { sans: ['Cairo', 'sans-serif'], en: ['Inter', 'sans-serif'] },
                     colors: {
-                        kilany: {
-                            dark: '#1d2d3e',
-                            blue: '#0a6ed1',
-                            blueHover: '#0854a0',
-                            gold: '#f0ab00',
-                            bg: '#f5f6f7'
+                        brand: {
+                            dark: '#1e293b', // لون كحلي هادي
+                            primary: '#2563eb', // أزرق صريح
+                            accent: '#f59e0b', // برتقالي/ذهبي للمكسب
+                            light: '#f8fafc' // خلفية مريحة
                         }
                     }
                 }
@@ -35,208 +31,289 @@
         }
     </script>
     <style>
-        body { background-color: #f3f4f6; font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; }
-        .kilany-shadow { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.04); }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        @keyframes slideIn { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .animate-slide-in { animation: slideIn 0.25s ease-out forwards; }
+        body { background-color: #f1f5f9; font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .soft-shadow { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); }
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade { animation: fadeIn 0.3s ease-out forwards; }
+        input, select { transition: all 0.2s; }
+        input:focus, select:focus { transform: translateY(-1px); }
     </style>
 </head>
-<body class="text-slate-800 min-h-screen flex flex-col pb-6">
+<body class="text-slate-800 min-h-screen flex flex-col pb-10">
 
-    <!-- شريط الرأس النظيف -->
-    <header class="bg-kilany-dark text-white sticky top-0 z-30 shadow-md border-b-2 border-kilany-gold">
-        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2.5 min-w-0">
-                <div class="w-9 h-9 rounded-lg bg-kilany-gold/15 border border-kilany-gold/40 text-kilany-gold flex items-center justify-center shrink-0 shadow-sm">
-                    <i class="fa-solid fa-warehouse text-base"></i>
+    <!-- شريط الرأس -->
+    <header class="bg-brand-dark text-white sticky top-0 z-30 shadow-lg">
+        <div class="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-brand-accent text-xl">
+                    <i class="fa-solid fa-box-open"></i>
                 </div>
-                <div class="truncate">
-                    <h1 class="font-en font-bold text-sm sm:text-base tracking-wide text-white truncate">
-                        Mohamed El-Kilany Warehouse
-                    </h1>
-                    <p class="text-[10px] text-slate-300 leading-tight truncate">نظام إدارة المخزون السحابي</p>
+                <div>
+                    <h1 class="font-bold text-base tracking-wide text-white">مخزن الكيلاني</h1>
+                    <p class="text-xs text-slate-400">إدارة البضاعة ببساطة</p>
                 </div>
             </div>
-
-            <div class="flex items-center gap-2 shrink-0">
-                <button type="button" onclick="clearAllData()" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 px-2.5 py-1.5 rounded-lg transition flex items-center gap-1.5 border border-slate-600">
-                    <i class="fa-solid fa-rotate-right text-kilany-gold"></i>
-                    <span class="text-[11px] sm:text-xs">تصفير الكل</span>
+            <button onclick="confirmAction('متأكد إنك عايز تصفر المخزن وتمسح كل الدفاتر؟', clearAllData)" class="text-xs bg-red-500/20 text-red-300 hover:bg-red-500/40 px-3 py-2 rounded-lg transition flex items-center gap-1.5 border border-red-500/30">
+                <i class="fa-solid fa-trash-can"></i>
+                <span>تصفير</span>
+            </button>
+        </div>
+        <!-- اختصارات سريعة -->
+        <div class="bg-slate-800 border-t border-slate-700 p-2">
+            <div class="max-w-3xl mx-auto flex gap-2">
+                <button onclick="scrollToSection('sectionAdd')" class="flex-1 bg-slate-700/50 hover:bg-slate-700 text-slate-200 text-xs py-2 rounded-lg font-bold flex justify-center items-center gap-2 transition">
+                    <i class="fa-solid fa-arrow-down text-emerald-400"></i> دخول بضاعة
+                </button>
+                <button onclick="scrollToSection('sectionWithdraw')" class="flex-1 bg-slate-700/50 hover:bg-slate-700 text-slate-200 text-xs py-2 rounded-lg font-bold flex justify-center items-center gap-2 transition">
+                    <i class="fa-solid fa-arrow-up text-brand-accent"></i> بيع أو سحب
                 </button>
             </div>
         </div>
     </header>
 
-    <main class="flex-grow max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 space-y-5">
+    <main class="flex-grow max-w-3xl w-full mx-auto px-4 py-5 space-y-6">
         
-        <!-- رسالة التنبيه لربط فايربيز (تختفي عند الربط الصحيح) -->
-        <div id="firebaseWarning" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative text-sm font-bold shadow-sm hidden" role="alert">
-            <i class="fa-solid fa-triangle-exclamation mr-1"></i> النظام غير متصل بـ Firebase بعد! يرجى إضافة إعدادات القاعدة الخاصة بك في الكود.
+        <!-- رسالة الخطأ لو فايربيز مش شغال -->
+        <div id="firebaseWarning" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-3 rounded-lg shadow-sm text-sm font-bold hidden animate-fade">
+            <i class="fa-solid fa-triangle-exclamation"></i> النظام مش مربوط بقاعدة البيانات لسه!
         </div>
 
-        <!-- KPI Dashboard Cards (مدمجة للموبايل) -->
-        <section id="sectionKpi" class="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div class="bg-white rounded-xl p-3 kilany-shadow border-t-4 border-kilany-blue flex flex-col justify-between">
-                <div class="text-[11px] font-bold text-slate-500 mb-1">إجمالي الكراتين</div>
-                <div class="text-xl font-extrabold text-slate-800 font-en" id="kpiTotalCartons">0</div>
-                <div class="text-[10px] text-slate-400 mt-2">القطع: <span id="kpiTotalUnits" class="font-bold">0</span></div>
+        <!-- لوحة الأرقام (الخلاصة) -->
+        <section class="grid grid-cols-2 gap-3 animate-fade">
+            <div class="bg-white rounded-2xl p-4 soft-shadow border-r-4 border-brand-primary">
+                <div class="text-xs font-bold text-slate-500 mb-1">إجمالي الكراتين</div>
+                <div class="text-2xl font-black text-slate-800 font-en" id="kpiTotalCartons">0</div>
+                <div class="text-[11px] text-slate-400 mt-1"><span id="kpiTotalUnits" class="font-bold text-slate-600">0</span> حتة (قطعة)</div>
             </div>
             
-            <div class="bg-white rounded-xl p-3 kilany-shadow border-t-4 border-amber-500 flex flex-col justify-between">
-                <div class="text-[11px] font-bold text-slate-500 mb-1">قبل البيع (التكلفة)</div>
-                <div class="text-xl font-extrabold text-amber-600 font-en" id="kpiTotalCost">0.00</div>
-                <div class="text-[10px] text-slate-400 mt-2">قيمة الشراء الحالية</div>
+            <div class="bg-white rounded-2xl p-4 soft-shadow border-r-4 border-amber-500">
+                <div class="text-xs font-bold text-slate-500 mb-1">رأس المال (التكلفة)</div>
+                <div class="text-2xl font-black text-amber-600 font-en" id="kpiTotalCost">0</div>
+                <div class="text-[11px] text-slate-400 mt-1">فلوس البضاعة اللي في المخزن</div>
             </div>
 
-            <div class="bg-white rounded-xl p-3 kilany-shadow border-t-4 border-indigo-600 flex flex-col justify-between">
-                <div class="text-[11px] font-bold text-slate-500 mb-1">بعد البيع (المتوقع)</div>
-                <div class="text-xl font-extrabold text-indigo-600 font-en" id="kpiTotalSellValue">0.00</div>
-                <div class="text-[10px] text-slate-400 mt-2">الربح المتوقع: <span id="kpiExpectedProfit" class="font-bold text-indigo-500">0.00</span></div>
+            <div class="bg-white rounded-2xl p-4 soft-shadow border-r-4 border-indigo-500">
+                <div class="text-xs font-bold text-slate-500 mb-1">لو بعنا كله هيجيب</div>
+                <div class="text-2xl font-black text-indigo-600 font-en" id="kpiTotalSellValue">0</div>
+                <div class="text-[11px] text-slate-400 mt-1">مكسب متوقع: <span id="kpiExpectedProfit" class="font-bold text-indigo-500">0</span></div>
             </div>
 
-            <div class="bg-gradient-to-br from-kilany-dark to-slate-800 text-white rounded-xl p-3 kilany-shadow border-t-4 border-kilany-gold flex flex-col justify-between">
-                <div class="text-[11px] font-bold text-amber-300 mb-1">صافي الربح المحقق</div>
-                <div class="text-xl font-extrabold text-white font-en" id="kpiRealizedProfit">0.00</div>
-                <div class="text-[10px] text-slate-300 mt-2">إجمالي الدخل: <span id="kpiTotalIncome" class="font-bold text-emerald-400">0.00</span></div>
+            <div class="bg-brand-dark text-white rounded-2xl p-4 soft-shadow border-r-4 border-emerald-400 relative overflow-hidden">
+                <i class="fa-solid fa-coins absolute left-[-10px] bottom-[-10px] text-5xl text-white/5"></i>
+                <div class="text-xs font-bold text-emerald-300 mb-1">المكسب الفعلي (في الجيب)</div>
+                <div class="text-2xl font-black text-white font-en relative z-10" id="kpiRealizedProfit">0</div>
+                <div class="text-[11px] text-slate-300 mt-1 relative z-10">إجمالي المبيعات: <span id="kpiTotalIncome" class="font-bold text-emerald-400">0</span></div>
             </div>
         </section>
 
-        <!-- نماذج الإدخال والسحب -->
-        <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            
-            <!-- Add New Goods Form -->
-            <div id="sectionAdd" class="bg-white rounded-xl kilany-shadow border border-slate-200 overflow-hidden scroll-mt-16">
-                <div class="bg-slate-800 text-white px-3 py-2.5 flex items-center gap-2">
-                    <i class="fa-solid fa-truck-ramp-box text-kilany-gold text-sm"></i>
-                    <h3 class="font-bold text-sm">توريد بضاعة للمخزن (شراء كراتين)</h3>
-                </div>
-                <form onsubmit="event.preventDefault(); addStockItem();" class="p-3.5 space-y-3">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">اسم الصنف / البضاعة <span class="text-red-500">*</span></label>
-                        <input type="text" id="itemName" required placeholder="مثال: زيت طعام عبوة 1 لتر" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-kilany-blue outline-none">
-                    </div>
-                    <div class="grid grid-cols-2 gap-2 bg-slate-50 p-2 rounded border border-slate-200">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">عدد الكراتين <span class="text-red-500">*</span></label>
-                            <input type="number" id="cartonCount" required min="1" oninput="syncPrices('count')" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm font-en focus:ring-2 focus:ring-kilany-blue outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">المنتجات بالكرتونة <span class="text-red-500">*</span></label>
-                            <input type="number" id="unitsPerCarton" required min="1" oninput="syncPrices('units')" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm font-en focus:ring-2 focus:ring-kilany-blue outline-none">
-                        </div>
-                    </div>
-                    <div class="p-2 rounded bg-amber-50/70 border border-amber-200">
-                        <div class="text-xs font-bold text-amber-900 mb-2">أسعار الشراء (قبل البيع)</div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="block text-[11px] text-slate-600 mb-1">سعر المنتج</label>
-                                <input type="number" id="unitBuyPrice" required min="0.01" step="any" oninput="syncPrices('unitBuy')" class="w-full rounded border border-amber-300 px-2 py-1 text-sm font-en outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-[11px] text-slate-600 mb-1">سعر الكرتونة</label>
-                                <input type="number" id="cartonBuyPrice" required min="0.01" step="any" oninput="syncPrices('cartonBuy')" class="w-full rounded border border-amber-300 px-2 py-1 text-sm font-en outline-none">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="p-2 rounded bg-indigo-50/70 border border-indigo-200">
-                        <div class="text-xs font-bold text-indigo-900 mb-2">أسعار البيع (بعد البيع)</div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="block text-[11px] text-slate-600 mb-1">سعر المنتج</label>
-                                <input type="number" id="unitSellPrice" required min="0.01" step="any" oninput="syncPrices('unitSell')" class="w-full rounded border border-indigo-300 px-2 py-1 text-sm font-en outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-[11px] text-slate-600 mb-1">سعر الكرتونة</label>
-                                <input type="number" id="cartonSellPrice" required min="0.01" step="any" oninput="syncPrices('cartonSell')" class="w-full rounded border border-indigo-300 px-2 py-1 text-sm font-en outline-none">
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <button type="submit" class="w-full bg-kilany-blue hover:bg-kilany-blueHover text-white font-bold py-2.5 rounded-lg shadow flex items-center justify-center gap-2 text-sm transition">
-                        <i class="fa-solid fa-plus-circle"></i> إضافة وتوريد للمخزن
-                    </button>
-                </form>
+        <!-- قسم إضافة بضاعة -->
+        <section id="sectionAdd" class="bg-white rounded-2xl soft-shadow overflow-hidden scroll-mt-28">
+            <div class="bg-slate-50 px-4 py-3 border-b border-slate-100 flex items-center gap-2">
+                <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center"><i class="fa-solid fa-plus"></i></div>
+                <h3 class="font-bold text-slate-800">دخّل بضاعة جديدة للمخزن</h3>
             </div>
-
-            <!-- Withdrawal Form -->
-            <div id="sectionWithdraw" class="bg-white rounded-xl kilany-shadow border border-slate-200 overflow-hidden scroll-mt-16">
-                <div class="bg-emerald-800 text-white px-3 py-2.5 flex items-center gap-2">
-                    <i class="fa-solid fa-dolly text-emerald-300 text-sm"></i>
-                    <h3 class="font-bold text-sm">سحب وصرف البضاعة (مبيعات)</h3>
+            <form onsubmit="event.preventDefault(); addStockItem();" class="p-4 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1.5">اسم البضاعة <span class="text-red-500">*</span></label>
+                    <input type="text" id="itemName" required placeholder="مثال: زيت خليط 1 لتر" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary">
                 </div>
-                <form onsubmit="event.preventDefault(); withdrawStockItem();" class="p-3.5 space-y-3">
+                <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">اختر الصنف المراد سحبه <span class="text-red-500">*</span></label>
-                        <select id="withdrawItemSelect" required onchange="updateWithdrawPreview()" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-600">
-                            <option value="">-- اختر الصنف من المخزن --</option>
+                        <label class="block text-xs font-bold text-slate-600 mb-1.5">جبت كام كرتونة؟ <span class="text-red-500">*</span></label>
+                        <input type="number" id="cartonCount" required min="1" oninput="syncPrices('count')" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-en outline-none focus:border-brand-primary">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1.5">الكرتونة فيها كام قطعة؟ <span class="text-red-500">*</span></label>
+                        <input type="number" id="unitsPerCarton" required min="1" oninput="syncPrices('units')" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-en outline-none focus:border-brand-primary">
+                    </div>
+                </div>
+                
+                <div class="bg-amber-50/50 rounded-xl p-3 border border-amber-100">
+                    <div class="text-xs font-bold text-amber-800 mb-2 flex items-center gap-1"><i class="fa-solid fa-money-bill-wave"></i> الأسعار اللي اشتريت بيها (التكلفة)</div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] text-slate-500 mb-1">الكرتونة بكام؟</label>
+                            <input type="number" id="cartonBuyPrice" required min="0.01" step="any" oninput="syncPrices('cartonBuy')" class="w-full bg-white border border-amber-200 rounded-lg px-3 py-2 text-sm font-en outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-500 mb-1">القطعة واقفة بكام؟</label>
+                            <input type="number" id="unitBuyPrice" required min="0.01" step="any" oninput="syncPrices('unitBuy')" class="w-full bg-white border border-amber-200 rounded-lg px-3 py-2 text-sm font-en outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-indigo-50/50 rounded-xl p-3 border border-indigo-100">
+                    <div class="text-xs font-bold text-indigo-800 mb-2 flex items-center gap-1"><i class="fa-solid fa-tags"></i> هتبيع بكام؟ (سعر البيع)</div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] text-slate-500 mb-1">هتبيع الكرتونة بكام؟</label>
+                            <input type="number" id="cartonSellPrice" required min="0.01" step="any" oninput="syncPrices('cartonSell')" class="w-full bg-white border border-indigo-200 rounded-lg px-3 py-2 text-sm font-en outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-500 mb-1">هتبيع القطعة بكام؟</label>
+                            <input type="number" id="unitSellPrice" required min="0.01" step="any" oninput="syncPrices('unitSell')" class="w-full bg-white border border-indigo-200 rounded-lg px-3 py-2 text-sm font-en outline-none">
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="w-full bg-brand-primary hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md shadow-blue-500/30 flex items-center justify-center gap-2 text-sm transition">
+                    <i class="fa-solid fa-check"></i> حفظ في المخزن
+                </button>
+            </form>
+        </section>
+
+        <!-- قسم سحب بضاعة -->
+        <section id="sectionWithdraw" class="bg-white rounded-2xl soft-shadow overflow-hidden scroll-mt-28">
+            <div class="bg-slate-50 px-4 py-3 border-b border-slate-100 flex items-center gap-2">
+                <div class="w-8 h-8 rounded-full bg-brand-accent/20 text-brand-accent flex items-center justify-center"><i class="fa-solid fa-cart-shopping"></i></div>
+                <h3 class="font-bold text-slate-800">بيّع أو اسحب بضاعة</h3>
+            </div>
+            <form onsubmit="event.preventDefault(); withdrawStockItem();" class="p-4 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1.5">اختار البضاعة <span class="text-red-500">*</span></label>
+                    <select id="withdrawItemSelect" required onchange="updateWithdrawPreview()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-accent">
+                        <option value="">-- اختار من المخزن --</option>
+                    </select>
+                </div>
+                
+                <div id="selectedItemStockInfo" class="hidden bg-slate-100 rounded-lg p-3 text-xs font-bold text-slate-700 flex justify-between items-center border border-slate-200">
+                    <span>متاح في المخزن:</span>
+                    <span id="infoAvailableStock" class="text-brand-primary font-en"></span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1.5">هتسحب إيه؟</label>
+                        <select id="withdrawType" onchange="updateWithdrawPreview()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none">
+                            <option value="cartons">كراتين مقفولة</option>
+                            <option value="units">قطع (فرط)</option>
                         </select>
                     </div>
-                    
-                    <div id="selectedItemStockInfo" class="hidden bg-emerald-50 border border-emerald-200 rounded p-2 text-[11px] space-y-1 font-bold text-emerald-900">
-                        <div class="flex justify-between"><span>الرصيد:</span> <span id="infoAvailableStock"></span></div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">نوع السحب</label>
-                            <select id="withdrawType" onchange="updateWithdrawPreview()" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm outline-none">
-                                <option value="cartons">بالكرتونة</option>
-                                <option value="units">بالقطعة (فرط)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">الكمية المسحوبة</label>
-                            <input type="number" id="withdrawQty" required min="1" value="1" oninput="updateWithdrawPreview()" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm font-en outline-none">
-                        </div>
-                    </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">بيان السحب (اختياري)</label>
-                        <input type="text" id="withdrawNote" placeholder="فاتورة مبيعات..." class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none">
+                        <label class="block text-xs font-bold text-slate-600 mb-1.5">الكمية</label>
+                        <input type="number" id="withdrawQty" required min="1" value="1" oninput="updateWithdrawPreview()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-en outline-none text-center">
                     </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1.5">ملاحظة (عشان تفتكرها في الدفتر)</label>
+                    <input type="text" id="withdrawNote" placeholder="مثال: فاتورة عميل كذا..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none">
+                </div>
 
-                    <div class="bg-slate-900 text-white rounded-lg p-3 flex justify-between items-center mt-2">
-                        <span class="text-xs font-bold text-emerald-400">الدخل المتوقع:</span>
-                        <span id="withdrawPreviewIncome" class="text-lg font-extrabold font-en text-emerald-400">0.00</span>
-                    </div>
+                <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-3 flex justify-between items-center">
+                    <span class="text-xs font-bold text-emerald-700">هيدخل للدرج:</span>
+                    <span id="withdrawPreviewIncome" class="text-xl font-black font-en text-emerald-600">0.00</span>
+                </div>
 
-                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg shadow flex items-center justify-center gap-2 text-sm transition">
-                        <i class="fa-solid fa-cart-arrow-down"></i> تأكيد السحب
-                    </button>
-                </form>
+                <button type="submit" class="w-full bg-brand-accent hover:bg-amber-500 text-white font-bold py-3 rounded-xl shadow-md shadow-amber-500/30 flex items-center justify-center gap-2 text-sm transition text-slate-900">
+                    <i class="fa-solid fa-hand-holding-dollar"></i> بيّع واخصم من المخزن
+                </button>
+            </form>
+        </section>
+
+        <!-- قسم المخزن (الجرد) -->
+        <section class="bg-white rounded-2xl soft-shadow overflow-hidden">
+            <div class="bg-slate-50 px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-warehouse text-slate-500"></i>
+                    <h3 class="font-bold text-slate-800">بضاعة المخزن (الجرد)</h3>
+                </div>
+            </div>
+            
+            <!-- شريط البحث (الفلتر) -->
+            <div class="p-3 border-b border-slate-100 bg-white">
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute right-3 top-3 text-slate-400"></i>
+                    <input type="text" id="searchInput" onkeyup="filterInventory()" placeholder="دور باسم البضاعة..." class="w-full bg-slate-100 border-none rounded-xl pr-10 pl-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-primary transition">
+                </div>
+            </div>
+
+            <!-- بطاقات البضاعة -->
+            <div id="inventoryMobileCards" class="divide-y divide-slate-100 bg-white min-h-[100px]">
+                <!-- سيتم إدراج البضاعة هنا -->
             </div>
         </section>
 
-        <!-- Inventory List (مخصصة للموبايل) -->
-        <section id="sectionInventory" class="bg-white rounded-xl kilany-shadow border border-slate-200 overflow-hidden scroll-mt-16">
-            <div class="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                <h3 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-warehouse text-kilany-blue mr-1"></i> رصيد المخزن الحالي</h3>
+        <!-- قسم الدفتر (السجل) -->
+        <section class="bg-white rounded-2xl soft-shadow overflow-hidden mb-6">
+            <div class="bg-slate-50 px-4 py-3 border-b border-slate-100 flex items-center gap-2">
+                <i class="fa-solid fa-clipboard-list text-slate-500"></i>
+                <h3 class="font-bold text-slate-800">دفتر الحركات (البيع)</h3>
             </div>
-            <!-- Inventory Cards -->
-            <div id="inventoryMobileCards" class="divide-y divide-slate-200"></div>
-        </section>
-
-        <!-- Withdrawal Logs (مخصصة للموبايل) -->
-        <section class="bg-white rounded-xl kilany-shadow border border-slate-200 overflow-hidden mb-6">
-            <div class="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                <h3 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-file-invoice-dollar text-emerald-600 mr-1"></i> سجل الحركات</h3>
+            <div id="withdrawLogMobileCards" class="divide-y divide-slate-100 max-h-96 overflow-y-auto">
+                <!-- سيتم إدراج السجلات هنا -->
             </div>
-            <!-- Log Cards -->
-            <div id="withdrawLogMobileCards" class="divide-y divide-slate-200 max-h-80 overflow-y-auto"></div>
         </section>
 
     </main>
 
-    <!-- Toast Container -->
-    <div id="toastContainer" class="fixed top-16 left-4 right-4 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
+    <!-- شاشة رسائل التنبيه (Toast) -->
+    <div id="toastContainer" class="fixed top-20 left-4 right-4 z-50 flex flex-col gap-2 max-w-sm mx-auto pointer-events-none"></div>
+
+    <!-- شاشة تأكيد مخصصة (Custom Confirm Modal) -->
+    <div id="confirmModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 transition-opacity">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm soft-shadow transform scale-95 transition-transform" id="confirmBox">
+            <div class="text-center mb-5">
+                <div class="w-12 h-12 rounded-full bg-red-100 text-red-500 mx-auto flex items-center justify-center text-xl mb-3"><i class="fa-solid fa-circle-exclamation"></i></div>
+                <h3 class="text-lg font-bold text-slate-800 mb-2">خد بالك!</h3>
+                <p id="confirmMessage" class="text-sm text-slate-600">هل أنت متأكد؟</p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="closeConfirmModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl font-bold text-sm transition">لأ، تراجع</button>
+                <button id="confirmBtn" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-xl font-bold text-sm transition shadow-lg shadow-red-500/30">أيوه، متأكد</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- شاشة التعديل (Edit Modal) -->
+    <div id="editModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 transition-opacity overflow-y-auto">
+        <div class="bg-white rounded-2xl w-full max-w-md soft-shadow transform scale-95 transition-transform my-8" id="editBox">
+            <div class="bg-slate-50 px-5 py-4 border-b border-slate-100 flex justify-between items-center rounded-t-2xl">
+                <h3 class="font-bold text-slate-800"><i class="fa-solid fa-pen-to-square text-brand-primary ml-1"></i> تعديل بيانات الصنف</h3>
+                <button onclick="closeEditModal()" class="text-slate-400 hover:text-red-500 text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="event.preventDefault(); saveEditItem();" class="p-5 space-y-4">
+                <input type="hidden" id="editItemId">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">اسم البضاعة</label>
+                    <input type="text" id="editItemName" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-brand-primary">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">الكرتونة فيها كام قطعة؟ (تغييرها هيأثر على الحسابات)</label>
+                    <input type="number" id="editUnitsPerCarton" required min="1" oninput="syncEditPrices('units')" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-en outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3 bg-amber-50 p-3 rounded-lg border border-amber-100">
+                    <div>
+                        <label class="block text-[10px] text-slate-500 mb-1">شراء الكرتونة</label>
+                        <input type="number" id="editCartonBuy" required min="0.01" step="any" oninput="syncEditPrices('cartonBuy')" class="w-full bg-white border border-amber-200 rounded px-2 py-1.5 text-sm font-en outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-500 mb-1">شراء القطعة</label>
+                        <input type="number" id="editUnitBuy" required min="0.01" step="any" oninput="syncEditPrices('unitBuy')" class="w-full bg-white border border-amber-200 rounded px-2 py-1.5 text-sm font-en outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                    <div>
+                        <label class="block text-[10px] text-slate-500 mb-1">بيع الكرتونة</label>
+                        <input type="number" id="editCartonSell" required min="0.01" step="any" oninput="syncEditPrices('cartonSell')" class="w-full bg-white border border-indigo-200 rounded px-2 py-1.5 text-sm font-en outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-500 mb-1">بيع القطعة</label>
+                        <input type="number" id="editUnitSell" required min="0.01" step="any" oninput="syncEditPrices('unitSell')" class="w-full bg-white border border-indigo-200 rounded px-2 py-1.5 text-sm font-en outline-none">
+                    </div>
+                </div>
+                <div class="pt-2 flex gap-3">
+                    <button type="button" onclick="closeEditModal()" class="flex-1 bg-slate-100 text-slate-700 py-2.5 rounded-xl text-sm font-bold">إلغاء</button>
+                    <button type="submit" class="flex-1 bg-brand-primary text-white py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-blue-500/30">حفظ التعديلات</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script>
         // ==========================================
-        // 🚨 خطوة 1: إعدادات فايربيز (Firebase Config) 🚨
+        // 🚨 إعدادات فايربيز الخاصة بك 🚨
         // ==========================================
-        // انسخ الإعدادات الخاصة بمشروعك في فايربيز وضعها هنا بدلاً من القيم الافتراضية
-        
         const firebaseConfig = {
             apiKey: "AIzaSyBFhU-YB96tVy8uT5ageeuLekXBBqfRHQ4",
             authDomain: "mohammed-al---kailani.firebaseapp.com",
@@ -246,104 +323,138 @@
             appId: "1:720694796330:web:a1bc0de8d3640211e96353"
         };
 
-        // ==========================================
-        // تهيئة Firebase وقاعدة البيانات
-        // ==========================================
         let db;
         let isFirebaseActive = false;
-        
-        try {
-            if (firebaseConfig.apiKey !== "ضع_الكود_الخاص_بك_هنا") {
-                firebase.initializeApp(firebaseConfig);
-                db = firebase.firestore();
-                isFirebaseActive = true;
-                document.getElementById('firebaseWarning').classList.add('hidden');
-            } else {
-                document.getElementById('firebaseWarning').classList.remove('hidden');
-                console.warn("⚠️ لم يتم ربط Firebase. يرجى إدخال الإعدادات في الكود.");
-            }
-        } catch (e) {
-            console.error("خطأ في تشغيل Firebase", e);
-        }
-
-        // ==========================================
-        // المتغيرات المحلية لتخزين البيانات
-        // ==========================================
         let inventory = [];
         let withdrawalLogs = [];
-
-        // ==========================================
-        // دوال المزامنة الحية (Real-time Sync) من فايربيز
-        // ==========================================
-        if (isFirebaseActive) {
-            // الاستماع لتغييرات المخزن لحظياً
+        
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            isFirebaseActive = true;
+            document.getElementById('firebaseWarning').classList.add('hidden');
+            
+            // جلب البيانات لحظياً
             db.collection("inventory").onSnapshot((querySnapshot) => {
                 inventory = [];
-                querySnapshot.forEach((doc) => {
-                    inventory.push({ id: doc.id, ...doc.data() });
-                });
+                querySnapshot.forEach((doc) => inventory.push({ id: doc.id, ...doc.data() }));
                 renderAll();
             });
 
-            // الاستماع لتغييرات السجل لحظياً، مرتبة من الأحدث للأقدم
             db.collection("logs").orderBy("createdAt", "desc").onSnapshot((querySnapshot) => {
                 withdrawalLogs = [];
-                querySnapshot.forEach((doc) => {
-                    withdrawalLogs.push({ id: doc.id, ...doc.data() });
-                });
+                querySnapshot.forEach((doc) => withdrawalLogs.push({ id: doc.id, ...doc.data() }));
                 renderAll();
             });
+        } catch (e) {
+            console.error("Firebase error", e);
+            document.getElementById('firebaseWarning').classList.remove('hidden');
         }
 
         // ==========================================
-        // الدوال المساعدة والتنسيق
+        // دوال مساعدة (UI & Helpers)
         // ==========================================
-        window.formatMoney = function(num) {
-            return Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        };
-
-        window.formatCartonBreakdown = function(totalUnits, unitsPerCarton) {
+        function formatMoney(num) { return Number(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+        
+        function formatCartonBreakdown(totalUnits, unitsPerCarton) {
             const fullCartons = Math.floor(totalUnits / unitsPerCarton);
             const looseUnits = totalUnits % unitsPerCarton;
             if (looseUnits === 0) return `${fullCartons} كرتونة`;
-            return `${fullCartons} كرتونة + ${looseUnits} قطعة`;
-        };
+            return `${fullCartons} كرتونة و ${looseUnits} قطعة`;
+        }
 
-        window.showNotification = function(message, type = 'success') {
+        function showNotification(message, type = 'success') {
             const container = document.getElementById('toastContainer');
-            if (!container) return;
             const toast = document.createElement('div');
             const bg = type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-red-600' : 'bg-slate-800';
-            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg text-white animate-slide-in text-sm ${bg}`;
-            toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-check' : 'fa-exclamation'}"></i> <div class="font-bold">${message}</div>`;
+            const icon = type === 'success' ? 'fa-circle-check' : 'fa-circle-xmark';
+            toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl text-white animate-fade text-sm font-bold ${bg}`;
+            toast.innerHTML = `<i class="fa-solid ${icon} text-lg"></i> <div>${message}</div>`;
             container.appendChild(toast);
-            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
-        };
+            setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(-10px)'; toast.style.transition = 'all 0.3s'; setTimeout(() => toast.remove(), 300); }, 3000);
+        }
 
-        window.syncPrices = function(source) {
-            const cCount = parseFloat(document.getElementById('cartonCount').value) || 0;
-            const uPerC = parseFloat(document.getElementById('unitsPerCarton').value) || 0;
-            const uBuy = document.getElementById('unitBuyPrice');
-            const cBuy = document.getElementById('cartonBuyPrice');
-            const uSell = document.getElementById('unitSellPrice');
-            const cSell = document.getElementById('cartonSellPrice');
-
-            if (uPerC > 0) {
-                if (source === 'unitBuy' || source === 'units') cBuy.value = (parseFloat(uBuy.value || 0) * uPerC).toFixed(2);
-                if (source === 'cartonBuy') uBuy.value = (parseFloat(cBuy.value || 0) / uPerC).toFixed(2);
-                if (source === 'unitSell' || source === 'units') cSell.value = (parseFloat(uSell.value || 0) * uPerC).toFixed(2);
-                if (source === 'cartonSell') uSell.value = (parseFloat(cSell.value || 0) / uPerC).toFixed(2);
-            }
-        };
+        function scrollToSection(id) {
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+        }
 
         // ==========================================
-        // إضافة صنف للمخزن (مربوط بفايربيز)
+        // المزامنة التلقائية للأسعار
         // ==========================================
-        window.addStockItem = async function() {
-            if (!isFirebaseActive) {
-                showNotification("يرجى ربط قاعدة البيانات Firebase أولاً ليعمل النظام", "error");
-                return;
-            }
+        function syncPrices(source) { _sync(source, ''); }
+        function syncEditPrices(source) { _sync(source, 'edit'); }
+        
+        function _sync(source, prefix) {
+            const getVal = (id) => parseFloat(document.getElementById(prefix + id).value) || 0;
+            const setVal = (id, val) => document.getElementById(prefix + id).value = val.toFixed(2);
+            
+            const uPerC = prefix ? getVal('UnitsPerCarton') : getVal('unitsPerCarton');
+            if (uPerC <= 0) return;
+
+            const uBuy = prefix ? getVal('UnitBuy') : getVal('unitBuyPrice');
+            const cBuy = prefix ? getVal('CartonBuy') : getVal('cartonBuyPrice');
+            const uSell = prefix ? getVal('UnitSell') : getVal('unitSellPrice');
+            const cSell = prefix ? getVal('CartonSell') : getVal('cartonSellPrice');
+
+            if (source === 'unitBuy' || source === 'units') setVal(prefix?'CartonBuy':'cartonBuyPrice', uBuy * uPerC);
+            if (source === 'cartonBuy') setVal(prefix?'UnitBuy':'unitBuyPrice', cBuy / uPerC);
+            if (source === 'unitSell' || source === 'units') setVal(prefix?'CartonSell':'cartonSellPrice', uSell * uPerC);
+            if (source === 'cartonSell') setVal(prefix?'UnitSell':'unitSellPrice', cSell / uPerC);
+        }
+
+        // ==========================================
+        // نوافذ التأكيد والتعديل (Modals)
+        // ==========================================
+        let pendingConfirmAction = null;
+        
+        function confirmAction(message, actionFunc) {
+            document.getElementById('confirmMessage').innerText = message;
+            pendingConfirmAction = actionFunc;
+            const modal = document.getElementById('confirmModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('opacity-0'); document.getElementById('confirmBox').classList.remove('scale-95'); }, 10);
+            
+            document.getElementById('confirmBtn').onclick = () => {
+                if(pendingConfirmAction) pendingConfirmAction();
+                closeConfirmModal();
+            };
+        }
+
+        function closeConfirmModal() {
+            const modal = document.getElementById('confirmModal');
+            modal.classList.add('opacity-0'); document.getElementById('confirmBox').classList.add('scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+            pendingConfirmAction = null;
+        }
+
+        function openEditModal(id) {
+            const item = inventory.find(i => i.id === id);
+            if(!item) return;
+            
+            document.getElementById('editItemId').value = item.id;
+            document.getElementById('editItemName').value = item.name;
+            document.getElementById('editUnitsPerCarton').value = item.unitsPerCarton;
+            document.getElementById('editUnitBuy').value = item.unitBuyPrice;
+            document.getElementById('editCartonBuy').value = item.cartonBuyPrice;
+            document.getElementById('editUnitSell').value = item.unitSellPrice;
+            document.getElementById('editCartonSell').value = item.cartonSellPrice;
+            
+            const modal = document.getElementById('editModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('opacity-0'); document.getElementById('editBox').classList.remove('scale-95'); }, 10);
+        }
+
+        function closeEditModal() {
+            const modal = document.getElementById('editModal');
+            modal.classList.add('opacity-0'); document.getElementById('editBox').classList.add('scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        // ==========================================
+        // العمليات الأساسية (إضافة، تعديل، حذف، سحب)
+        // ==========================================
+        async function addStockItem() {
+            if (!isFirebaseActive) { showNotification("النت فاصل أو مفيش قاعدة بيانات!", "error"); return; }
 
             const name = document.getElementById('itemName').value.trim();
             const cartonCount = parseInt(document.getElementById('cartonCount').value);
@@ -352,10 +463,8 @@
             const cartonBuyPrice = parseFloat(document.getElementById('cartonBuyPrice').value);
             const unitSellPrice = parseFloat(document.getElementById('unitSellPrice').value);
             const cartonSellPrice = parseFloat(document.getElementById('cartonSellPrice').value);
-
             const addedUnits = cartonCount * unitsPerCarton;
             
-            // البحث إذا كان الصنف موجود مسبقاً بنفس الخصائص
             const existingItem = inventory.find(i => i.name === name && i.unitsPerCarton === unitsPerCarton);
 
             try {
@@ -364,35 +473,91 @@
                         totalUnits: existingItem.totalUnits + addedUnits,
                         unitBuyPrice, cartonBuyPrice, unitSellPrice, cartonSellPrice
                     });
-                    showNotification(`تم زيادة رصيد ${name} بنجاح`, 'success');
+                    showNotification(`زودنا رصيد ${name} بنجاح`, 'success');
                 } else {
                     await db.collection("inventory").add({
-                        name,
-                        unitsPerCarton,
-                        totalUnits: addedUnits,
+                        name, unitsPerCarton, totalUnits: addedUnits,
                         unitBuyPrice, cartonBuyPrice, unitSellPrice, cartonSellPrice,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
-                    showNotification(`تم إضافة ${name} للمخزن`, 'success');
+                    showNotification(`تم تسجيل ${name} في المخزن`, 'success');
                 }
+                document.querySelectorAll('#sectionAdd input[type="number"], #sectionAdd input[type="text"]').forEach(el => el.value = '');
+            } catch (error) { showNotification("حصلت مشكلة وقت التسجيل", "error"); }
+        }
 
-                // تفريغ الحقول بعد الإضافة
-                document.getElementById('itemName').value = '';
-                document.getElementById('cartonCount').value = '';
-                document.getElementById('unitBuyPrice').value = '';
-                document.getElementById('cartonBuyPrice').value = '';
-                document.getElementById('unitSellPrice').value = '';
-                document.getElementById('cartonSellPrice').value = '';
-            } catch (error) {
-                console.error(error);
-                showNotification("حدث خطأ أثناء الإضافة", "error");
-            }
-        };
+        async function saveEditItem() {
+            const id = document.getElementById('editItemId').value;
+            const name = document.getElementById('editItemName').value.trim();
+            const unitsPerCarton = parseInt(document.getElementById('editUnitsPerCarton').value);
+            const unitBuyPrice = parseFloat(document.getElementById('editUnitBuy').value);
+            const cartonBuyPrice = parseFloat(document.getElementById('editCartonBuy').value);
+            const unitSellPrice = parseFloat(document.getElementById('editUnitSell').value);
+            const cartonSellPrice = parseFloat(document.getElementById('editCartonSell').value);
+
+            try {
+                await db.collection("inventory").doc(id).update({
+                    name, unitsPerCarton, unitBuyPrice, cartonBuyPrice, unitSellPrice, cartonSellPrice
+                });
+                showNotification("تم تعديل بيانات الصنف", "success");
+                closeEditModal();
+            } catch(e) { showNotification("مقدرناش نحفظ التعديل", "error"); }
+        }
+
+        async function withdrawStockItem() {
+            if (!isFirebaseActive) return;
+
+            const selectEl = document.getElementById('withdrawItemSelect');
+            const item = inventory.find(i => i.id === selectEl.value);
+            const type = document.getElementById('withdrawType').value;
+            const qty = parseInt(document.getElementById('withdrawQty').value);
+            const note = document.getElementById('withdrawNote').value.trim() || 'حركة مبيعات';
+
+            if (!item || qty <= 0) return;
+
+            const unitsToDeduct = type === 'cartons' ? qty * item.unitsPerCarton : qty;
+            if (unitsToDeduct > item.totalUnits) { showNotification(`الرصيد في المخزن ميكفيش!`, 'error'); return; }
+
+            const cost = type === 'cartons' ? qty * item.cartonBuyPrice : qty * item.unitBuyPrice;
+            const income = type === 'cartons' ? qty * item.cartonSellPrice : qty * item.unitSellPrice;
+            const profit = income - cost;
+            const timeStr = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+
+            try {
+                await db.collection("inventory").doc(item.id).update({ totalUnits: item.totalUnits - unitsToDeduct });
+                await db.collection("logs").add({
+                    itemName: item.name, withdrawTypeLabel: type === 'cartons' ? `${qty} كرتونة` : `${qty} قطعة`,
+                    unitsDeducted: unitsToDeduct, costValue: cost, incomeValue: income, profit: profit,
+                    note: note, timestamp: `اليوم ${timeStr}`, createdAt: Date.now()
+                });
+                document.getElementById('withdrawQty').value = 1; document.getElementById('withdrawNote').value = '';
+                showNotification(`تم البيع والخصم بنجاح`, 'success');
+            } catch (error) { showNotification("حصلت مشكلة وقت البيع", "error"); }
+        }
+
+        async function clearAllData() {
+            try {
+                const invSnapshot = await db.collection("inventory").get();
+                invSnapshot.forEach(doc => doc.ref.delete());
+                const logSnapshot = await db.collection("logs").get();
+                logSnapshot.forEach(doc => doc.ref.delete());
+                showNotification('تم تصفير المخزن بالكامل يا ريس', 'success');
+            } catch(e) { showNotification('مشكلة في التصفير', 'error'); }
+        }
 
         // ==========================================
-        // تحديث شاشة السحب
+        // وظائف العرض والفلترة
         // ==========================================
-        window.updateWithdrawPreview = function() {
+        function filterInventory() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const cards = document.querySelectorAll('.inventory-card');
+            cards.forEach(card => {
+                const name = card.getAttribute('data-name').toLowerCase();
+                card.style.display = name.includes(query) ? 'block' : 'none';
+            });
+        }
+
+        function updateWithdrawPreview() {
             const selectEl = document.getElementById('withdrawItemSelect');
             const item = inventory.find(i => i.id === selectEl.value);
             const type = document.getElementById('withdrawType').value;
@@ -406,103 +571,11 @@
             }
 
             infoBox.classList.remove('hidden');
-            document.getElementById('infoAvailableStock').textContent = formatCartonBreakdown(item.totalUnits, item.unitsPerCarton) + ` (${item.totalUnits} قطعة)`;
-            
+            document.getElementById('infoAvailableStock').textContent = formatCartonBreakdown(item.totalUnits, item.unitsPerCarton);
             const income = type === 'cartons' ? qty * item.cartonSellPrice : qty * item.unitSellPrice;
             document.getElementById('withdrawPreviewIncome').textContent = formatMoney(income);
-        };
+        }
 
-        // ==========================================
-        // سحب صنف (مربوط بفايربيز)
-        // ==========================================
-        window.withdrawStockItem = async function() {
-            if (!isFirebaseActive) return;
-
-            const selectEl = document.getElementById('withdrawItemSelect');
-            const item = inventory.find(i => i.id === selectEl.value);
-            const type = document.getElementById('withdrawType').value;
-            const qty = parseInt(document.getElementById('withdrawQty').value);
-            const note = document.getElementById('withdrawNote').value.trim() || 'سحب مبيعات';
-
-            if (!item || qty <= 0) return;
-
-            const unitsToDeduct = type === 'cartons' ? qty * item.unitsPerCarton : qty;
-
-            if (unitsToDeduct > item.totalUnits) {
-                showNotification(`الرصيد غير كافٍ!`, 'error');
-                return;
-            }
-
-            const cost = type === 'cartons' ? qty * item.cartonBuyPrice : qty * item.unitBuyPrice;
-            const income = type === 'cartons' ? qty * item.cartonSellPrice : qty * item.unitSellPrice;
-            const profit = income - cost;
-            const timeStr = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-
-            try {
-                // 1. خصم من المخزن
-                await db.collection("inventory").doc(item.id).update({
-                    totalUnits: item.totalUnits - unitsToDeduct
-                });
-
-                // 2. تسجيل الحركة في السجل
-                await db.collection("logs").add({
-                    itemName: item.name,
-                    withdrawTypeLabel: type === 'cartons' ? `${qty} كرتونة` : `${qty} قطعة`,
-                    unitsDeducted: unitsToDeduct,
-                    costValue: cost,
-                    incomeValue: income,
-                    profit: profit,
-                    note: note,
-                    timestamp: `اليوم ${timeStr}`,
-                    createdAt: Date.now() // للتصنيف الزمني الدقيق
-                });
-
-                document.getElementById('withdrawQty').value = 1;
-                document.getElementById('withdrawNote').value = '';
-                showNotification(`تم السحب بنجاح`, 'success');
-            } catch (error) {
-                console.error(error);
-                showNotification("حدث خطأ أثناء السحب", "error");
-            }
-        };
-
-        // ==========================================
-        // دوال إضافية (حذف وتصفير)
-        // ==========================================
-        window.deleteInventoryItem = async function(id) {
-            if (confirm('هل أنت متأكد من حذف الصنف؟')) {
-                await db.collection("inventory").doc(id).delete();
-                showNotification('تم الحذف بنجاح', 'success');
-            }
-        };
-
-        window.clearAllData = async function() {
-            if (!isFirebaseActive) return;
-            if (confirm('تنبيه هام! هل تريد مسح كل المخزن وحركات المبيعات من قاعدة البيانات نهائياً؟')) {
-                try {
-                    // مسح المخزن
-                    const invSnapshot = await db.collection("inventory").get();
-                    invSnapshot.forEach(doc => doc.ref.delete());
-                    // مسح السجل
-                    const logSnapshot = await db.collection("logs").get();
-                    logSnapshot.forEach(doc => doc.ref.delete());
-                    
-                    showNotification('تم تصفير النظام بالكامل', 'success');
-                } catch(e) {
-                    showNotification('حدث خطأ أثناء التصفير', 'error');
-                }
-            }
-        };
-
-        window.selectForWithdraw = function(id) {
-            document.getElementById('withdrawItemSelect').value = id;
-            updateWithdrawPreview();
-            document.getElementById('sectionWithdraw').scrollIntoView({ behavior: 'smooth' });
-        };
-
-        // ==========================================
-        // عرض البيانات على الشاشة (الريندر)
-        // ==========================================
         function renderAll() {
             const invContainer = document.getElementById('inventoryMobileCards');
             const selectEl = document.getElementById('withdrawItemSelect');
@@ -510,7 +583,7 @@
             const currentSelectedId = selectEl.value;
 
             invContainer.innerHTML = '';
-            selectEl.innerHTML = '<option value="">-- اختر الصنف --</option>';
+            selectEl.innerHTML = '<option value="">-- اختار من المخزن --</option>';
             
             let totalCartons = 0, totalUnits = 0, totalCost = 0, totalSell = 0;
 
@@ -526,46 +599,49 @@
                     selectEl.innerHTML += `<option value="${item.id}">${item.name} (${formatCartonBreakdown(item.totalUnits, item.unitsPerCarton)})</option>`;
                 }
 
+                // كارت الصنف في المخزن
                 invContainer.innerHTML += `
-                    <div class="p-3 bg-white space-y-2">
-                        <div class="flex justify-between items-start">
+                    <div class="p-4 inventory-card transition hover:bg-slate-50" data-name="${item.name}">
+                        <div class="flex justify-between items-start mb-2">
                             <div class="font-bold text-sm text-slate-800">${item.name}</div>
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${item.totalUnits===0?'bg-red-100 text-red-700':'bg-blue-100 text-blue-700'}">
+                            <span class="px-2 py-1 rounded-md text-[10px] font-bold ${item.totalUnits===0?'bg-red-100 text-red-700':'bg-brand-primary/10 text-brand-primary'}">
                                 ${formatCartonBreakdown(item.totalUnits, item.unitsPerCarton)}
                             </span>
                         </div>
-                        <div class="flex justify-between items-center text-xs border-t border-slate-100 pt-2">
-                            <div>تكلفة: <span class="font-en text-amber-600 font-bold">${formatMoney(cost)}</span></div>
+                        <div class="flex justify-between items-center text-xs text-slate-500 mb-3">
+                            <div>رأس مال: <span class="font-en text-amber-600 font-bold">${formatMoney(cost)}</span></div>
                             <div>بيع: <span class="font-en text-indigo-600 font-bold">${formatMoney(sell)}</span></div>
                         </div>
-                        <div class="flex gap-2 pt-1">
-                            <button onclick="selectForWithdraw('${item.id}')" ${item.totalUnits===0?'disabled':''} class="flex-1 bg-emerald-100 text-emerald-800 py-1.5 rounded text-xs font-bold active:bg-emerald-200">سحب</button>
-                            <button onclick="deleteInventoryItem('${item.id}')" class="px-3 bg-red-50 text-red-600 rounded text-xs"><i class="fa-solid fa-trash"></i></button>
+                        <div class="flex gap-2">
+                            <button onclick="document.getElementById('withdrawItemSelect').value='${item.id}'; updateWithdrawPreview(); scrollToSection('sectionWithdraw');" ${item.totalUnits===0?'disabled':''} class="flex-[2] bg-emerald-100 hover:bg-emerald-200 text-emerald-700 py-2 rounded-lg text-xs font-bold transition">اسحب</button>
+                            <button onclick="openEditModal('${item.id}')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-2 rounded-lg text-xs font-bold transition">تعديل</button>
+                            <button onclick="confirmAction('عايز تحذف ${item.name} خالص من المخزن؟', () => db.collection('inventory').doc('${item.id}').delete())" class="flex-1 bg-red-50 hover:bg-red-100 text-red-600 py-2 rounded-lg text-xs transition"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>`;
             });
 
-            if(inventory.length === 0) invContainer.innerHTML = '<div class="p-4 text-center text-xs text-slate-400">المخزن فارغ</div>';
+            if(inventory.length === 0) invContainer.innerHTML = '<div class="p-6 text-center text-sm text-slate-400">المخزن فاضي يا ريس.. دخّل بضاعة الأول</div>';
             if (currentSelectedId && Array.from(selectEl.options).some(o => o.value === currentSelectedId)) selectEl.value = currentSelectedId;
             updateWithdrawPreview();
+            filterInventory(); // إعادة تطبيق الفلتر لو كان مكتوب حاجة
 
             let totalIncome = 0, totalProfit = 0;
             logContainer.innerHTML = '';
             withdrawalLogs.forEach(log => {
                 totalIncome += log.incomeValue; totalProfit += log.profit;
                 logContainer.innerHTML += `
-                    <div class="p-3 bg-white text-xs">
-                        <div class="flex justify-between font-bold text-slate-800 mb-1">
-                            <span>${log.itemName} <span class="text-slate-400 font-normal">(${log.withdrawTypeLabel})</span></span>
+                    <div class="p-3.5 hover:bg-slate-50 transition">
+                        <div class="flex justify-between font-bold text-sm text-slate-800 mb-1">
+                            <span>${log.itemName} <span class="text-xs text-slate-500 font-normal">(${log.withdrawTypeLabel})</span></span>
                             <span class="text-emerald-600 font-en">+${formatMoney(log.incomeValue)}</span>
                         </div>
-                        <div class="flex justify-between text-[10px] text-slate-500">
-                            <span>${log.timestamp} - ${log.note}</span>
-                            <span class="text-indigo-500">ربح: ${formatMoney(log.profit)}</span>
+                        <div class="flex justify-between items-center text-[11px] text-slate-500">
+                            <span><i class="fa-regular fa-clock mr-1"></i> ${log.timestamp} - ${log.note}</span>
+                            <span class="text-indigo-500 font-bold bg-indigo-50 px-2 py-0.5 rounded">مكسب: ${formatMoney(log.profit)}</span>
                         </div>
                     </div>`;
             });
-            if(withdrawalLogs.length === 0) logContainer.innerHTML = '<div class="p-4 text-center text-xs text-slate-400">لا يوجد حركات سحب</div>';
+            if(withdrawalLogs.length === 0) logContainer.innerHTML = '<div class="p-6 text-center text-sm text-slate-400">مفيش أي حركات بيع متسجلة</div>';
 
             document.getElementById('kpiTotalCartons').textContent = Number.isInteger(totalCartons) ? totalCartons : totalCartons.toFixed(2);
             document.getElementById('kpiTotalUnits').textContent = totalUnits;
@@ -576,7 +652,8 @@
             document.getElementById('kpiTotalIncome').textContent = formatMoney(totalIncome);
         }
 
-        if(!isFirebaseActive) renderAll(); // Render empty UI if no firebase
+        if(!isFirebaseActive) renderAll();
     </script>
 </body>
 </html>
+
