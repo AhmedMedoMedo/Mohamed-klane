@@ -1,0 +1,1061 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mohamed El-Kilany Warehouse</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Cairo', 'sans-serif'],
+                        en: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        sap: {
+                            dark: '#1d2d3e',
+                            header: '#2c3e50',
+                            blue: '#0a6ed1',
+                            blueHover: '#0854a0',
+                            gold: '#f0ab00',
+                            bg: '#f5f6f7',
+                            card: '#ffffff'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #f3f4f6;
+            font-family: 'Cairo', sans-serif;
+        }
+        .sap-shadow {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.04);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        @keyframes slideIn {
+            from { transform: translateY(-10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-in {
+            animation: slideIn 0.25s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col pb-20 md:pb-0">
+
+    <header class="bg-sap-dark text-white sticky top-0 z-30 shadow-md border-b-2 border-sap-gold">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-9 h-9 rounded-lg bg-sap-gold/15 border border-sap-gold/40 text-sap-gold flex items-center justify-center shrink-0 shadow-sm">
+                    <i class="fa-solid fa-warehouse text-base"></i>
+                </div>
+                <div class="truncate">
+                    <h1 class="font-en font-bold text-xs sm:text-base tracking-wide text-white truncate">
+                        Mohamed El-Kilany Warehouse
+                    </h1>
+                    <p class="text-[10px] sm:text-xs text-slate-300 leading-tight truncate">نظام إدارة المخزون والمبيعات</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0">
+                <button type="button" onclick="clearAllData()" class="text-xs bg-slate-700 hover:bg-slate-600 active:scale-95 text-slate-200 px-2.5 py-1.5 rounded-lg transition flex items-center gap-1.5 border border-slate-600" title="تصفير المخزن والحركات">
+                    <i class="fa-solid fa-rotate-right text-sap-gold"></i>
+                    <span class="text-[11px] sm:text-xs">تصفير الكل</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <nav class="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 z-40 grid grid-cols-4 text-[11px] font-bold text-slate-600 shadow-[0_-2px_10px_rgba(0,0,0,0.06)]">
+        <a href="#sectionKpi" class="flex flex-col items-center justify-center py-2 hover:text-sap-blue active:bg-slate-50">
+            <i class="fa-solid fa-chart-pie text-sm mb-0.5 text-sap-blue"></i>
+            <span>الإحصائيات</span>
+        </a>
+        <a href="#sectionAdd" class="flex flex-col items-center justify-center py-2 hover:text-sap-blue active:bg-slate-50">
+            <i class="fa-solid fa-plus-circle text-sm mb-0.5 text-amber-600"></i>
+            <span>توريد كراتين</span>
+        </a>
+        <a href="#sectionWithdraw" class="flex flex-col items-center justify-center py-2 hover:text-sap-blue active:bg-slate-50">
+            <i class="fa-solid fa-dolly text-sm mb-0.5 text-emerald-600"></i>
+            <span>سحب بضاعة</span>
+        </a>
+        <a href="#sectionInventory" class="flex flex-col items-center justify-center py-2 hover:text-sap-blue active:bg-slate-50">
+            <i class="fa-solid fa-boxes-stacked text-sm mb-0.5 text-indigo-600"></i>
+            <span>المخزن</span>
+        </a>
+    </nav>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-5">
+
+        <!-- KPI Dashboard Cards -->
+        <section id="sectionKpi" aria-label="إحصائيات المخزن">
+            <div class="grid grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-4">
+                
+                <!-- 1. Total Cartons & Units -->
+                <div class="bg-white rounded-xl p-3 sm:p-4 sap-shadow border-t-4 border-sap-blue flex flex-col justify-between">
+                    <div class="flex justify-between items-start gap-1">
+                        <div>
+                            <p class="text-[11px] sm:text-xs font-bold text-slate-500">إجمالي الكراتين</p>
+                            <h2 id="kpiTotalCartons" class="text-base sm:text-2xl font-extrabold text-slate-800 mt-0.5 font-en truncate">0</h2>
+                        </div>
+                        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-blue-50 text-sap-blue flex items-center justify-center text-sm sm:text-lg shrink-0">
+                            <i class="fa-solid fa-boxes-stacked"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 pt-1.5 border-t border-slate-100 flex justify-between items-center text-[10px] sm:text-[11px] text-slate-500 truncate">
+                        <span>القطع:</span>
+                        <span id="kpiTotalUnits" class="font-bold text-slate-700 font-en truncate">0</span>
+                    </div>
+                </div>
+
+                <!-- 2. Total Cost Before Sale -->
+                <div class="bg-white rounded-xl p-3 sm:p-4 sap-shadow border-t-4 border-amber-500 flex flex-col justify-between">
+                    <div class="flex justify-between items-start gap-1">
+                        <div>
+                            <p class="text-[11px] sm:text-xs font-bold text-slate-500">قبل البيع (التكلفة)</p>
+                            <h2 id="kpiTotalCost" class="text-sm sm:text-2xl font-extrabold text-amber-600 mt-0.5 font-en truncate">0.00</h2>
+                        </div>
+                        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-sm sm:text-lg shrink-0">
+                            <i class="fa-solid fa-tags"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 pt-1.5 border-t border-slate-100 flex justify-between items-center text-[10px] sm:text-[11px] text-slate-500">
+                        <span>قيمة الشراء</span>
+                        <span class="text-amber-700 font-semibold font-en">COST</span>
+                    </div>
+                </div>
+
+                <!-- 3. Total Value After Sale -->
+                <div class="bg-white rounded-xl p-3 sm:p-4 sap-shadow border-t-4 border-indigo-600 flex flex-col justify-between">
+                    <div class="flex justify-between items-start gap-1">
+                        <div>
+                            <p class="text-[11px] sm:text-xs font-bold text-slate-500">بعد البيع (المتوقع)</p>
+                            <h2 id="kpiTotalSellValue" class="text-sm sm:text-2xl font-extrabold text-indigo-600 mt-0.5 font-en truncate">0.00</h2>
+                        </div>
+                        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm sm:text-lg shrink-0">
+                            <i class="fa-solid fa-chart-line"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 pt-1.5 border-t border-slate-100 flex justify-between items-center text-[10px] sm:text-[11px] text-slate-500 truncate">
+                        <span>ربح متوقع:</span>
+                        <span id="kpiExpectedProfit" class="font-bold text-indigo-700 font-en truncate">0.00</span>
+                    </div>
+                </div>
+
+                <!-- 4. Total Income From Withdrawals -->
+                <div class="bg-white rounded-xl p-3 sm:p-4 sap-shadow border-t-4 border-emerald-500 flex flex-col justify-between">
+                    <div class="flex justify-between items-start gap-1">
+                        <div>
+                            <p class="text-[11px] sm:text-xs font-bold text-emerald-700">إجمالي الدخل (سحب)</p>
+                            <h2 id="kpiTotalIncome" class="text-sm sm:text-2xl font-extrabold text-emerald-600 mt-0.5 font-en truncate">0.00</h2>
+                        </div>
+                        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm sm:text-lg shrink-0">
+                            <i class="fa-solid fa-sack-dollar"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 pt-1.5 border-t border-slate-100 flex justify-between items-center text-[10px] sm:text-[11px] text-slate-500">
+                        <span>عمليات سحب:</span>
+                        <span id="kpiWithdrawalCount" class="font-bold text-emerald-700 font-en">0</span>
+                    </div>
+                </div>
+
+                <!-- 5. Realized Net Profit -->
+                <div class="col-span-2 lg:col-span-1 bg-gradient-to-br from-sap-dark to-slate-800 text-white rounded-xl p-3.5 sm:p-4 sap-shadow border-t-4 border-sap-gold flex flex-row lg:flex-col justify-between items-center lg:items-stretch">
+                    <div class="flex justify-between items-center lg:items-start w-full">
+                        <div>
+                            <p class="text-xs font-bold text-amber-300">صافي الربح المحقق</p>
+                            <h2 id="kpiRealizedProfit" class="text-base sm:text-2xl font-extrabold text-white mt-0.5 font-en truncate">0.00</h2>
+                        </div>
+                        <div class="w-9 h-9 rounded-lg bg-white/10 text-sap-gold flex items-center justify-center text-base shrink-0">
+                            <i class="fa-solid fa-coins"></i>
+                        </div>
+                    </div>
+                    <div class="hidden lg:flex mt-3 pt-2 border-t border-slate-700 justify-between items-center text-xs text-slate-300">
+                        <span>بعد خصم التكلفة</span>
+                        <span class="text-sap-gold font-en font-semibold">NET</span>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            
+            <!-- Add New Goods Form -->
+            <div id="sectionAdd" class="lg:col-span-7 bg-white rounded-xl sap-shadow border border-slate-200 overflow-hidden scroll-mt-16">
+                <div class="bg-slate-800 text-white px-4 py-3 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-truck-ramp-box text-sap-gold text-base"></i>
+                        <h3 class="font-bold text-sm sm:text-base">توريد بضاعة جديدة للمخزن (شراء كراتين)</h3>
+                    </div>
+                </div>
+
+                <!-- Form uses preventDefault in inline onsubmit -->
+                <form id="addStockForm" onsubmit="event.preventDefault(); addStockItem(); return false;" class="p-3.5 sm:p-5 space-y-3.5">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">اسم الصنف / البضاعة <span class="text-red-500">*</span></label>
+                            <input type="text" id="itemName" required placeholder="مثال: زيت طعام عبوة 1 لتر" 
+                                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sap-blue bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">كود الصنف (اختياري)</label>
+                            <input type="text" id="itemSku" placeholder="تلقائي" 
+                                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-en focus:outline-none focus:ring-2 focus:ring-sap-blue bg-white">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">عدد الكراتين <span class="text-red-500">*</span></label>
+                            <input type="number" id="cartonCount" required min="1" step="1" placeholder="50" oninput="syncPrices('count')"
+                                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-en focus:outline-none focus:ring-2 focus:ring-sap-blue bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">المنتجات بكل كرتونة <span class="text-red-500">*</span></label>
+                            <input type="number" id="unitsPerCarton" required min="1" step="1" placeholder="12" oninput="syncPrices('units')"
+                                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-en focus:outline-none focus:ring-2 focus:ring-sap-blue bg-white">
+                        </div>
+                    </div>
+
+                    <!-- Pricing Matrix -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- Cost Price Box -->
+                        <div class="p-3 rounded-lg bg-amber-50/70 border border-amber-200 space-y-2.5">
+                            <div class="flex items-center justify-between border-b border-amber-200 pb-1">
+                                <span class="text-xs font-bold text-amber-900">أسعار الشراء (قبل البيع)</span>
+                                <span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">حساب تلقائي</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">سعر المنتج <span class="text-red-500">*</span></label>
+                                    <input type="number" id="unitBuyPrice" required min="0.01" step="any" placeholder="0.00" oninput="syncPrices('unitBuy')"
+                                        class="w-full rounded-lg border border-amber-300 bg-white px-2.5 py-1.5 text-sm font-en focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">سعر الكرتونة <span class="text-red-500">*</span></label>
+                                    <input type="number" id="cartonBuyPrice" required min="0.01" step="any" placeholder="0.00" oninput="syncPrices('cartonBuy')"
+                                        class="w-full rounded-lg border border-amber-300 bg-white px-2.5 py-1.5 text-sm font-en focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Selling Price Box -->
+                        <div class="p-3 rounded-lg bg-indigo-50/70 border border-indigo-200 space-y-2.5">
+                            <div class="flex items-center justify-between border-b border-indigo-200 pb-1">
+                                <span class="text-xs font-bold text-indigo-900">أسعار البيع (بعد البيع)</span>
+                                <span class="text-[10px] bg-indigo-100 text-indigo-800 px-1.5 py-0.5 rounded">حساب تلقائي</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">سعر المنتج <span class="text-red-500">*</span></label>
+                                    <input type="number" id="unitSellPrice" required min="0.01" step="any" placeholder="0.00" oninput="syncPrices('unitSell')"
+                                        class="w-full rounded-lg border border-indigo-300 bg-white px-2.5 py-1.5 text-sm font-en focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">سعر الكرتونة <span class="text-red-500">*</span></label>
+                                    <input type="number" id="cartonSellPrice" required min="0.01" step="any" placeholder="0.00" oninput="syncPrices('cartonSell')"
+                                        class="w-full rounded-lg border border-indigo-300 bg-white px-2.5 py-1.5 text-sm font-en focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Preview Bar -->
+                    <div class="bg-slate-100 rounded-lg px-3 py-2 grid grid-cols-3 gap-2 text-center text-[11px] sm:text-xs border border-slate-200">
+                        <div>
+                            <span class="text-slate-500 block">إجمالي القطع</span>
+                            <strong id="previewTotalUnits" class="font-en text-slate-800">0 قطعة</strong>
+                        </div>
+                        <div class="border-x border-slate-200">
+                            <span class="text-slate-500 block">قبل البيع</span>
+                            <strong id="previewTotalCost" class="font-en text-amber-700">0.00</strong>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block">بعد البيع</span>
+                            <strong id="previewTotalSell" class="font-en text-indigo-700">0.00</strong>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-sap-blue hover:bg-sap-blueHover active:scale-[0.99] text-white font-bold px-6 py-2.5 rounded-lg shadow transition flex items-center justify-center gap-2 text-sm">
+                        <i class="fa-solid fa-plus-circle"></i>
+                        <span>إضافة وتوريد للمخزن</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Withdrawal Form -->
+            <div id="sectionWithdraw" class="lg:col-span-5 bg-white rounded-xl sap-shadow border border-slate-200 overflow-hidden flex flex-col justify-between scroll-mt-16">
+                <div>
+                    <div class="bg-emerald-800 text-white px-4 py-3 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-dolly text-emerald-300 text-base"></i>
+                            <h3 class="font-bold text-sm sm:text-base">سحب وصرف البضاعة (مبيعات)</h3>
+                        </div>
+                    </div>
+
+                    <form id="withdrawForm" onsubmit="event.preventDefault(); withdrawStockItem(); return false;" class="p-3.5 sm:p-5 space-y-3.5">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">اختر الصنف المراد سحبه <span class="text-red-500">*</span></label>
+                            <select id="withdrawItemSelect" required onchange="updateWithdrawPreview()"
+                                class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                                <option value="">-- اختر الصنف من المخزن --</option>
+                            </select>
+                        </div>
+
+                        <div id="selectedItemStockInfo" class="hidden bg-emerald-50 border border-emerald-200 rounded-lg p-2.5 text-xs space-y-1">
+                            <div class="flex justify-between">
+                                <span class="text-slate-600">الرصيد المتاح:</span>
+                                <span id="infoAvailableStock" class="font-bold text-emerald-900"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-600">سعر البيع:</span>
+                                <span id="infoSellingPrices" class="font-bold text-indigo-700 font-en"></span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">نوع السحب <span class="text-red-500">*</span></label>
+                                <select id="withdrawType" onchange="updateWithdrawPreview()"
+                                    class="w-full rounded-lg border border-slate-300 px-2.5 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                                    <option value="cartons">بالكرتونة</option>
+                                    <option value="units">بالقطعة (فرط)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">الكمية المسحوبة <span class="text-red-500">*</span></label>
+                                <input type="number" id="withdrawQty" required min="1" step="1" value="1" oninput="updateWithdrawPreview()"
+                                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-en focus:outline-none focus:ring-2 focus:ring-emerald-600 bg-white">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">بيان / اسم العميل (اختياري)</label>
+                            <input type="text" id="withdrawNote" placeholder="مثال: فاتورة عميل نقدي"
+                                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600 bg-white">
+                        </div>
+
+                        <div class="bg-slate-900 text-white rounded-xl p-3.5 space-y-1.5">
+                            <div class="flex justify-between items-center text-xs text-slate-300">
+                                <span>إجمالي القطع المخصومة:</span>
+                                <span id="withdrawPreviewUnits" class="font-en font-bold text-white">0 قطعة</span>
+                            </div>
+                            <div class="flex justify-between items-center pt-1.5 border-t border-slate-700">
+                                <span class="text-xs font-bold text-emerald-400">الدخل من عملية السحب:</span>
+                                <span id="withdrawPreviewIncome" class="text-lg sm:text-xl font-extrabold font-en text-emerald-400">0.00</span>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold py-2.5 px-4 rounded-lg shadow transition flex items-center justify-center gap-2 text-sm">
+                            <i class="fa-solid fa-cart-arrow-down"></i>
+                            <span>تأكيد السحب وخصم من المخزن</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        </section>
+
+        <section id="sectionInventory" class="bg-white rounded-xl sap-shadow border border-slate-200 overflow-hidden scroll-mt-16">
+            <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-warehouse text-sap-blue text-base sm:text-lg"></i>
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-sm sm:text-base">رصيد مخزن البضاعة الحالي</h3>
+                        <p class="text-[11px] sm:text-xs text-slate-500">تحديث تلقائي لعدد الكراتين والقطع والأسعار</p>
+                    </div>
+                </div>
+                <div class="relative w-full sm:w-64">
+                    <input type="text" id="searchInventory" oninput="renderAll()" placeholder="بحث باسم الصنف أو الكود..."
+                        class="w-full rounded-lg border border-slate-300 pr-9 pl-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sap-blue bg-white">
+                    <i class="fa-solid fa-magnifying-glass absolute right-3 top-2.5 text-slate-400 text-xs"></i>
+                </div>
+            </div>
+
+            <!-- Mobile Cards -->
+            <div id="inventoryMobileCards" class="md:hidden divide-y divide-slate-200"></div>
+
+            <!-- Desktop Table -->
+            <div class="hidden md:block overflow-x-auto custom-scrollbar">
+                <table class="w-full text-right border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-600 text-xs uppercase border-b border-slate-200">
+                            <th class="py-3 px-4 font-bold">الكود / الصنف</th>
+                            <th class="py-3 px-3 font-bold text-center">سعة الكرتونة</th>
+                            <th class="py-3 px-3 font-bold text-center bg-blue-50/60 text-blue-900">الرصيد بالكرتونة</th>
+                            <th class="py-3 px-3 font-bold text-center">إجمالي القطع</th>
+                            <th class="py-3 px-3 font-bold text-center">سعر المنتج (شراء / بيع)</th>
+                            <th class="py-3 px-3 font-bold text-center">سعر الكرتونة (شراء / بيع)</th>
+                            <th class="py-3 px-3 font-bold text-center bg-amber-50/60 text-amber-900">إجمالي قبل البيع</th>
+                            <th class="py-3 px-3 font-bold text-center bg-indigo-50/60 text-indigo-900">إجمالي بعد البيع</th>
+                            <th class="py-3 px-3 font-bold text-center">إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTableBody" class="divide-y divide-slate-200 text-sm"></tbody>
+                </table>
+            </div>
+
+            <!-- Inventory Summary Footer -->
+            <div class="bg-slate-800 text-white p-3.5 sm:px-6 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                <div class="bg-slate-700/60 p-2 rounded-lg text-center">
+                    <span class="text-slate-300 block text-[11px]">إجمالي الكراتين بالمخزن</span>
+                    <span id="footTotalCartons" class="font-en font-bold text-amber-300 text-sm sm:text-base">0</span>
+                </div>
+                <div class="bg-slate-700/60 p-2 rounded-lg text-center">
+                    <span class="text-slate-300 block text-[11px]">إجمالي القطع الفردية</span>
+                    <span id="footTotalUnits" class="font-en font-bold text-white text-sm sm:text-base">0</span>
+                </div>
+                <div class="bg-slate-700/60 p-2 rounded-lg text-center">
+                    <span class="text-slate-300 block text-[11px]">إجمالي السعر قبل البيع</span>
+                    <span id="footTotalBeforeSale" class="font-en font-bold text-amber-300 text-sm sm:text-base">0.00</span>
+                </div>
+                <div class="bg-slate-700/60 p-2 rounded-lg text-center">
+                    <span class="text-slate-300 block text-[11px]">إجمالي السعر بعد البيع</span>
+                    <span id="footTotalAfterSale" class="font-en font-bold text-emerald-300 text-sm sm:text-base">0.00</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-white rounded-xl sap-shadow border border-slate-200 overflow-hidden">
+            <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-file-invoice-dollar text-emerald-600 text-base sm:text-lg"></i>
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-sm sm:text-base">سجل حركات السحب والدخل المحقق</h3>
+                        <p class="text-[11px] sm:text-xs text-slate-500">تفاصيل عمليات السحب من المخزن والعائد المالي</p>
+                    </div>
+                </div>
+                <div class="bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg flex items-center justify-between sm:justify-start gap-2">
+                    <span class="text-xs text-emerald-800 font-bold">إجمالي دخل المبيعات المسحوبة:</span>
+                    <span id="logHeaderTotalIncome" class="font-en font-extrabold text-emerald-700 text-sm sm:text-base">0.00</span>
+                </div>
+            </div>
+
+            <!-- Mobile Log Cards -->
+            <div id="withdrawLogMobileCards" class="md:hidden divide-y divide-slate-200 max-h-96 overflow-y-auto"></div>
+
+            <!-- Desktop Log Table -->
+            <div class="hidden md:block overflow-x-auto custom-scrollbar max-h-96">
+                <table class="w-full text-right border-collapse">
+                    <thead class="sticky top-0 bg-slate-100 text-slate-600 text-xs uppercase border-b border-slate-200 shadow-sm">
+                        <tr>
+                            <th class="py-3 px-4 font-bold">رقم الحركة</th>
+                            <th class="py-3 px-4 font-bold">التوقيت</th>
+                            <th class="py-3 px-4 font-bold">الصنف المسحوب</th>
+                            <th class="py-3 px-3 font-bold text-center">الكمية المسحوبة</th>
+                            <th class="py-3 px-3 font-bold text-center">إجمالي القطع</th>
+                            <th class="py-3 px-3 font-bold text-center">التكلفة قبل البيع</th>
+                            <th class="py-3 px-3 font-bold text-center bg-emerald-50 text-emerald-900">الدخل المحقق (سعر البيع)</th>
+                            <th class="py-3 px-3 font-bold text-center">صافي الربح</th>
+                            <th class="py-3 px-4 font-bold">البيان</th>
+                        </tr>
+                    </thead>
+                    <tbody id="withdrawLogBody" class="divide-y divide-slate-200 text-sm"></tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 py-4 mt-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2 text-center">
+            <div class="font-en font-semibold text-slate-700">
+                Mohamed El-Kilany Warehouse Management System &copy; 2026
+            </div>
+            <div>
+                نظام إدارة الكراتين والمخزون وحسابات الدخل المباشر
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="fixed bottom-20 md:bottom-5 left-4 right-4 sm:left-5 sm:right-auto z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
+
+    <script>
+        // Start with clean empty storage for accurate user testing
+        let inventory = [];
+        let withdrawalLogs = [];
+
+        const STORAGE_KEYS = {
+            INVENTORY: 'kilany_warehouse_inventory_clean_v3',
+            LOGS: 'kilany_warehouse_logs_clean_v3'
+        };
+
+        function saveToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEYS.INVENTORY, JSON.stringify(inventory));
+                localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(withdrawalLogs));
+            } catch (e) {
+                console.warn('Could not save to localStorage', e);
+            }
+        }
+
+        function loadFromStorage() {
+            try {
+                const savedInv = localStorage.getItem(STORAGE_KEYS.INVENTORY);
+                const savedLogs = localStorage.getItem(STORAGE_KEYS.LOGS);
+                if (savedInv && savedLogs) {
+                    inventory = JSON.parse(savedInv);
+                    withdrawalLogs = JSON.parse(savedLogs);
+                    return true;
+                }
+            } catch (e) {
+                console.warn('Could not read from localStorage', e);
+            }
+            return false;
+        }
+
+        function initEmptyData() {
+            inventory = [];
+            withdrawalLogs = [];
+            saveToStorage();
+        }
+
+        function formatMoney(num) {
+            return Number(num || 0).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function formatCartonBreakdown(totalUnits, unitsPerCarton) {
+            const fullCartons = Math.floor(totalUnits / unitsPerCarton);
+            const looseUnits = totalUnits % unitsPerCarton;
+            const exactDecimalCartons = (totalUnits / unitsPerCarton).toFixed(2);
+            
+            if (looseUnits === 0) {
+                return {
+                    mainText: `${fullCartons} كرتونة`,
+                    subText: `كاملة`,
+                    numericCartons: fullCartons
+                };
+            } else {
+                return {
+                    mainText: `${fullCartons} كرتونة + ${looseUnits} قطعة`,
+                    subText: `(${exactDecimalCartons} كرتونة)`,
+                    numericCartons: totalUnits / unitsPerCarton
+                };
+            }
+        }
+
+        function showNotification(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const toast = document.createElement('div');
+            
+            const colors = {
+                success: 'bg-emerald-800 border-emerald-500 text-white',
+                error: 'bg-red-800 border-red-500 text-white',
+                info: 'bg-sap-dark border-sap-gold text-white'
+            };
+            const icons = {
+                success: 'fa-circle-check text-emerald-400',
+                error: 'fa-triangle-exclamation text-red-300',
+                info: 'fa-circle-info text-sap-gold'
+            };
+
+            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border-r-4 ${colors[type]} animate-slide-in text-xs sm:text-sm`;
+            toast.innerHTML = `
+                <i class="fa-solid ${icons[type]} text-lg"></i>
+                <div class="flex-grow font-semibold">${message}</div>
+            `;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        function syncPrices(source) {
+            const cartonCount = parseFloat(document.getElementById('cartonCount').value) || 0;
+            const unitsPerCarton = parseFloat(document.getElementById('unitsPerCarton').value) || 0;
+            
+            const unitBuyInput = document.getElementById('unitBuyPrice');
+            const cartonBuyInput = document.getElementById('cartonBuyPrice');
+            const unitSellInput = document.getElementById('unitSellPrice');
+            const cartonSellInput = document.getElementById('cartonSellPrice');
+
+            if (unitsPerCarton > 0) {
+                if (source === 'unitBuy' || source === 'units') {
+                    const uBuy = parseFloat(unitBuyInput.value);
+                    if (!isNaN(uBuy)) cartonBuyInput.value = (uBuy * unitsPerCarton).toFixed(2);
+                } else if (source === 'cartonBuy') {
+                    const cBuy = parseFloat(cartonBuyInput.value);
+                    if (!isNaN(cBuy)) unitBuyInput.value = (cBuy / unitsPerCarton).toFixed(2);
+                }
+
+                if (source === 'unitSell' || source === 'units') {
+                    const uSell = parseFloat(unitSellInput.value);
+                    if (!isNaN(uSell)) cartonSellInput.value = (uSell * unitsPerCarton).toFixed(2);
+                } else if (source === 'cartonSell') {
+                    const cSell = parseFloat(cartonSellInput.value);
+                    if (!isNaN(cSell)) unitSellInput.value = (cSell / unitsPerCarton).toFixed(2);
+                }
+            }
+
+            const totalUnits = cartonCount * unitsPerCarton;
+            const cBuyVal = parseFloat(cartonBuyInput.value) || 0;
+            const cSellVal = parseFloat(cartonSellInput.value) || 0;
+
+            document.getElementById('previewTotalUnits').textContent = `${totalUnits} قطعة`;
+            document.getElementById('previewTotalCost').textContent = formatMoney(cartonCount * cBuyVal);
+            document.getElementById('previewTotalSell').textContent = formatMoney(cartonCount * cSellVal);
+        }
+
+        function addStockItem() {
+            const name = document.getElementById('itemName').value.trim();
+            const skuInput = document.getElementById('itemSku').value.trim();
+            const cartonCount = parseInt(document.getElementById('cartonCount').value, 10);
+            const unitsPerCarton = parseInt(document.getElementById('unitsPerCarton').value, 10);
+            const unitBuyPrice = parseFloat(document.getElementById('unitBuyPrice').value);
+            const cartonBuyPrice = parseFloat(document.getElementById('cartonBuyPrice').value);
+            const unitSellPrice = parseFloat(document.getElementById('unitSellPrice').value);
+            const cartonSellPrice = parseFloat(document.getElementById('cartonSellPrice').value);
+
+            if (!name || isNaN(cartonCount) || cartonCount <= 0 || isNaN(unitsPerCarton) || unitsPerCarton <= 0) {
+                showNotification('يرجى إدخال بيانات الصنف والكميات بشكل صحيح', 'error');
+                return;
+            }
+
+            if (isNaN(unitBuyPrice) || isNaN(cartonBuyPrice) || isNaN(unitSellPrice) || isNaN(cartonSellPrice)) {
+                showNotification('يرجى تحديد أسعار الشراء والبيع بدقة', 'error');
+                return;
+            }
+
+            const addedUnits = cartonCount * unitsPerCarton;
+
+            const existingItem = inventory.find(
+                item => item.name.toLowerCase() === name.toLowerCase() && item.unitsPerCarton === unitsPerCarton
+            );
+
+            if (existingItem) {
+                existingItem.totalUnits += addedUnits;
+                existingItem.unitBuyPrice = unitBuyPrice;
+                existingItem.cartonBuyPrice = cartonBuyPrice;
+                existingItem.unitSellPrice = unitSellPrice;
+                existingItem.cartonSellPrice = cartonSellPrice;
+                showNotification(`تم تزويد رصيد (${name}) بعدد ${cartonCount} كرتونة بنجاح`, 'success');
+            } else {
+                const newSku = skuInput || `MK-${1000 + inventory.length + 1}`;
+                inventory.push({
+                    id: 'ITEM-' + Date.now(),
+                    sku: newSku,
+                    name,
+                    unitsPerCarton,
+                    totalUnits: addedUnits,
+                    unitBuyPrice,
+                    cartonBuyPrice,
+                    unitSellPrice,
+                    cartonSellPrice
+                });
+                showNotification(`تم إضافة الصنف (${name}) بعدد ${cartonCount} كرتونة إلى المخزن`, 'success');
+            }
+
+            document.getElementById('addStockForm').reset();
+            syncPrices('reset');
+            renderAll();
+        }
+
+        function updateWithdrawPreview() {
+            const selectEl = document.getElementById('withdrawItemSelect');
+            const selectedId = selectEl.value;
+            const withdrawType = document.getElementById('withdrawType').value;
+            const qty = parseInt(document.getElementById('withdrawQty').value, 10) || 0;
+            const infoBox = document.getElementById('selectedItemStockInfo');
+
+            if (!selectedId) {
+                infoBox.classList.add('hidden');
+                document.getElementById('withdrawPreviewUnits').textContent = '0 قطعة';
+                document.getElementById('withdrawPreviewIncome').textContent = '0.00';
+                return;
+            }
+
+            const item = inventory.find(i => i.id === selectedId);
+            if (!item) return;
+
+            infoBox.classList.remove('hidden');
+            const breakdown = formatCartonBreakdown(item.totalUnits, item.unitsPerCarton);
+            document.getElementById('infoAvailableStock').textContent = `${breakdown.mainText} (إجمالي ${item.totalUnits} قطعة)`;
+            document.getElementById('infoSellingPrices').textContent = `الكرتونة: ${formatMoney(item.cartonSellPrice)} | القطعة: ${formatMoney(item.unitSellPrice)}`;
+
+            let unitsToDeduct = 0;
+            let incomeGenerated = 0;
+
+            if (withdrawType === 'cartons') {
+                unitsToDeduct = qty * item.unitsPerCarton;
+                incomeGenerated = qty * item.cartonSellPrice;
+            } else {
+                unitsToDeduct = qty;
+                incomeGenerated = qty * item.unitSellPrice;
+            }
+
+            document.getElementById('withdrawPreviewUnits').textContent = `${unitsToDeduct} قطعة`;
+            document.getElementById('withdrawPreviewIncome').textContent = formatMoney(incomeGenerated);
+        }
+
+        function withdrawStockItem() {
+            const selectEl = document.getElementById('withdrawItemSelect');
+            const selectedId = selectEl.value;
+            const withdrawType = document.getElementById('withdrawType').value;
+            const qty = parseInt(document.getElementById('withdrawQty').value, 10);
+            const noteInput = document.getElementById('withdrawNote');
+            const note = noteInput.value.trim() || 'سحب مباشر من المخزن';
+
+            if (!selectedId) {
+                showNotification('يرجى اختيار الصنف المراد سحبه من المخزن', 'error');
+                return;
+            }
+
+            const item = inventory.find(i => i.id === selectedId);
+            if (!item || isNaN(qty) || qty <= 0) {
+                showNotification('يرجى إدخال كمية صحيحة للسحب', 'error');
+                return;
+            }
+
+            const unitsToDeduct = withdrawType === 'cartons' ? qty * item.unitsPerCarton : qty;
+
+            if (unitsToDeduct > item.totalUnits) {
+                showNotification(`الرصيد غير كافٍ! المتاح حالياً ${item.totalUnits} قطعة فقط.`, 'error');
+                return;
+            }
+
+            item.totalUnits -= unitsToDeduct;
+
+            const costValue = withdrawType === 'cartons'
+                ? qty * item.cartonBuyPrice
+                : qty * item.unitBuyPrice;
+
+            const incomeValue = withdrawType === 'cartons'
+                ? qty * item.cartonSellPrice
+                : qty * item.unitSellPrice;
+
+            const profit = incomeValue - costValue;
+
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+
+            withdrawalLogs.unshift({
+                docId: 'DOC-' + Math.floor(1000 + Math.random() * 9000),
+                timestamp: `اليوم - ${timeStr}`,
+                itemName: item.name,
+                withdrawTypeLabel: withdrawType === 'cartons' ? `${qty} كرتونة` : `${qty} قطعة`,
+                unitsDeducted: unitsToDeduct,
+                costValue,
+                incomeValue,
+                profit,
+                note
+            });
+
+            showNotification(`تم سحب ${withdrawType === 'cartons' ? qty + ' كرتونة' : qty + ' قطعة'} من (${item.name}) وتسجيل دخل بقيمة ${formatMoney(incomeValue)}`, 'success');
+
+            document.getElementById('withdrawQty').value = 1;
+            noteInput.value = '';
+            renderAll();
+        }
+
+        function selectItemForWithdraw(itemId) {
+            const selectEl = document.getElementById('withdrawItemSelect');
+            selectEl.value = itemId;
+            updateWithdrawPreview();
+            const withdrawSection = document.getElementById('sectionWithdraw');
+            if (withdrawSection) {
+                withdrawSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            setTimeout(() => document.getElementById('withdrawQty').focus(), 300);
+            showNotification('تم تحديد الصنف في نموذج السحب السريع', 'info');
+        }
+
+        function deleteInventoryItem(itemId) {
+            inventory = inventory.filter(i => i.id !== itemId);
+            saveToStorage();
+            showNotification('تم حذف الصنف من سجل المخزن', 'info');
+            renderAll();
+        }
+
+        function clearAllData() {
+            initEmptyData();
+            renderAll();
+            showNotification('تم تصفير المخزن والحركات بنجاح وجاهز للتجربة', 'info');
+        }
+
+        function renderAll() {
+            saveToStorage();
+            const searchInput = document.getElementById('searchInventory');
+            const searchQuery = searchInput ? searchInput.value.trim().toLowerCase() : '';
+            const tbody = document.getElementById('inventoryTableBody');
+            const mobileCardsContainer = document.getElementById('inventoryMobileCards');
+            const selectEl = document.getElementById('withdrawItemSelect');
+            const currentSelectedId = selectEl.value;
+
+            tbody.innerHTML = '';
+            mobileCardsContainer.innerHTML = '';
+            selectEl.innerHTML = '<option value="">-- اختر الصنف من المخزن --</option>';
+
+            let totalWarehouseCartons = 0;
+            let totalWarehouseUnits = 0;
+            let totalWarehouseCostBeforeSale = 0;
+            let totalWarehouseValueAfterSale = 0;
+
+            inventory.forEach(item => {
+                const exactCartons = item.totalUnits / item.unitsPerCarton;
+                const itemTotalCost = item.totalUnits * item.unitBuyPrice;
+                const itemTotalSell = item.totalUnits * item.unitSellPrice;
+
+                totalWarehouseCartons += exactCartons;
+                totalWarehouseUnits += item.totalUnits;
+                totalWarehouseCostBeforeSale += itemTotalCost;
+                totalWarehouseValueAfterSale += itemTotalSell;
+
+                if (item.totalUnits > 0) {
+                    const b = formatCartonBreakdown(item.totalUnits, item.unitsPerCarton);
+                    const opt = document.createElement('option');
+                    opt.value = item.id;
+                    opt.textContent = `${item.name} (المتاح: ${b.mainText})`;
+                    selectEl.appendChild(opt);
+                }
+
+                if (searchQuery && !item.name.toLowerCase().includes(searchQuery) && !item.sku.toLowerCase().includes(searchQuery)) {
+                    return;
+                }
+
+                const breakdown = formatCartonBreakdown(item.totalUnits, item.unitsPerCarton);
+                const stockStatusClass = item.totalUnits === 0
+                    ? 'bg-red-100 text-red-700 border-red-200'
+                    : 'bg-blue-50 text-sap-blue border-blue-200';
+
+                // Desktop Row
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="py-3.5 px-4">
+                        <div class="font-bold text-slate-800">${item.name}</div>
+                        <div class="text-xs font-en text-slate-400">${item.sku}</div>
+                    </td>
+                    <td class="py-3.5 px-3 text-center font-en text-xs text-slate-600">
+                        <span class="bg-slate-100 px-2 py-1 rounded border border-slate-200">${item.unitsPerCarton} قطعة</span>
+                    </td>
+                    <td class="py-3.5 px-3 text-center bg-blue-50/30">
+                        <span class="inline-block px-2.5 py-1 rounded-full text-xs font-bold border ${stockStatusClass}">
+                            ${breakdown.mainText}
+                        </span>
+                        <div class="text-[11px] text-slate-400 font-en mt-0.5">${breakdown.subText}</div>
+                    </td>
+                    <td class="py-3.5 px-3 text-center font-en font-bold text-slate-700">
+                        ${item.totalUnits}
+                    </td>
+                    <td class="py-3.5 px-3 text-center font-en text-xs">
+                        <div class="text-amber-700">شراء: <strong>${formatMoney(item.unitBuyPrice)}</strong></div>
+                        <div class="text-indigo-700">بيع: <strong>${formatMoney(item.unitSellPrice)}</strong></div>
+                    </td>
+                    <td class="py-3.5 px-3 text-center font-en text-xs">
+                        <div class="text-amber-700">شراء: <strong>${formatMoney(item.cartonBuyPrice)}</strong></div>
+                        <div class="text-indigo-700">بيع: <strong>${formatMoney(item.cartonSellPrice)}</strong></div>
+                    </td>
+                    <td class="py-3.5 px-3 text-center font-en font-bold text-amber-700 bg-amber-50/30">
+                        ${formatMoney(itemTotalCost)}
+                    </td>
+                    <td class="py-3.5 px-3 text-center font-en font-bold text-indigo-700 bg-indigo-50/30">
+                        ${formatMoney(itemTotalSell)}
+                    </td>
+                    <td class="py-3.5 px-3 text-center">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <button type="button" onclick="selectItemForWithdraw('${item.id}')" ${item.totalUnits === 0 ? 'disabled' : ''} 
+                                class="px-2.5 py-1.5 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-bold transition disabled:opacity-40" title="سحب من هذا الصنف">
+                                <i class="fa-solid fa-dolly"></i> سحب
+                            </button>
+                            <button type="button" onclick="deleteInventoryItem('${item.id}')" 
+                                class="p-1.5 rounded bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs transition" title="حذف الصنف">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+
+                // Mobile Card
+                const card = document.createElement('div');
+                card.className = 'p-3.5 space-y-2.5 bg-white';
+                card.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <div class="font-bold text-slate-800 text-sm">${item.name}</div>
+                            <div class="text-[11px] text-slate-400 font-en">${item.sku} • سعة الكرتونة: ${item.unitsPerCarton} قطعة</div>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold border shrink-0 ${stockStatusClass}">
+                            ${breakdown.mainText}
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                        <div>
+                            <span class="text-slate-400 block text-[10px]">سعر الكرتونة (شراء / بيع)</span>
+                            <span class="font-en font-bold text-amber-700">${formatMoney(item.cartonBuyPrice)}</span>
+                            <span class="text-slate-300 mx-1">/</span>
+                            <span class="font-en font-bold text-indigo-700">${formatMoney(item.cartonSellPrice)}</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block text-[10px]">سعر القطعة (شراء / بيع)</span>
+                            <span class="font-en font-bold text-amber-700">${formatMoney(item.unitBuyPrice)}</span>
+                            <span class="text-slate-300 mx-1">/</span>
+                            <span class="font-en font-bold text-indigo-700">${formatMoney(item.unitSellPrice)}</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-1">
+                        <div class="flex gap-3 text-xs">
+                            <div>
+                                <span class="text-slate-400 text-[10px] block">قبل البيع</span>
+                                <span class="font-en font-extrabold text-amber-700">${formatMoney(itemTotalCost)}</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 text-[10px] block">بعد البيع</span>
+                                <span class="font-en font-extrabold text-indigo-700">${formatMoney(itemTotalSell)}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button type="button" onclick="selectItemForWithdraw('${item.id}')" ${item.totalUnits === 0 ? 'disabled' : ''} 
+                                class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold shadow-sm active:scale-95 transition disabled:opacity-40">
+                                <i class="fa-solid fa-dolly ml-1"></i>سحب
+                            </button>
+                            <button type="button" onclick="deleteInventoryItem('${item.id}')" 
+                                class="p-1.5 rounded-lg bg-red-50 text-red-600 border border-red-200 text-xs">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                mobileCardsContainer.appendChild(card);
+            });
+
+            if (inventory.length === 0) {
+                const emptyMsg = `
+                    <div class="py-8 text-center text-slate-400 text-sm">
+                        المخزن فارغ حالياً. قم بإضافة كراتين جديدة من النموذج بالأعلى لبدء التجربة.
+                    </div>
+                `;
+                tbody.innerHTML = `<tr><td colspan="9">${emptyMsg}</td></tr>`;
+                mobileCardsContainer.innerHTML = emptyMsg;
+            }
+
+            if (currentSelectedId && Array.from(selectEl.options).some(o => o.value === currentSelectedId)) {
+                selectEl.value = currentSelectedId;
+            }
+            updateWithdrawPreview();
+
+            let totalIncomeFromWithdrawals = 0;
+            let totalRealizedProfit = 0;
+            const logBody = document.getElementById('withdrawLogBody');
+            const logMobileCards = document.getElementById('withdrawLogMobileCards');
+            logBody.innerHTML = '';
+            logMobileCards.innerHTML = '';
+
+            withdrawalLogs.forEach(log => {
+                totalIncomeFromWithdrawals += log.incomeValue;
+                totalRealizedProfit += log.profit;
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-en text-xs font-bold text-slate-500">${log.docId}</td>
+                    <td class="py-3 px-4 text-xs text-slate-500">${log.timestamp}</td>
+                    <td class="py-3 px-4 font-bold text-slate-800">${log.itemName}</td>
+                    <td class="py-3 px-3 text-center">
+                        <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-0.5 rounded-full">
+                            ${log.withdrawTypeLabel}
+                        </span>
+                    </td>
+                    <td class="py-3 px-3 text-center font-en font-semibold">${log.unitsDeducted} قطعة</td>
+                    <td class="py-3 px-3 text-center font-en text-amber-700">${formatMoney(log.costValue)}</td>
+                    <td class="py-3 px-3 text-center font-en font-extrabold text-emerald-700 bg-emerald-50/50">${formatMoney(log.incomeValue)}</td>
+                    <td class="py-3 px-3 text-center font-en font-bold text-indigo-600">+${formatMoney(log.profit)}</td>
+                    <td class="py-3 px-4 text-xs text-slate-600">${log.note}</td>
+                `;
+                logBody.appendChild(tr);
+
+                const mCard = document.createElement('div');
+                mCard.className = 'p-3.5 space-y-1.5 bg-white';
+                mCard.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="font-bold text-slate-800 text-sm">${log.itemName}</span>
+                            <div class="text-[11px] text-slate-400">${log.timestamp} • ${log.note}</div>
+                        </div>
+                        <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-0.5 rounded-full shrink-0">
+                            ${log.withdrawTypeLabel}
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center pt-1.5 border-t border-slate-100 text-xs">
+                        <div>
+                            <span class="text-slate-400">الدخل: </span>
+                            <strong class="font-en text-emerald-700 text-sm">${formatMoney(log.incomeValue)}</strong>
+                        </div>
+                        <div>
+                            <span class="text-slate-400">الربح: </span>
+                            <strong class="font-en text-indigo-600">+${formatMoney(log.profit)}</strong>
+                        </div>
+                    </div>
+                `;
+                logMobileCards.appendChild(mCard);
+            });
+
+            if (withdrawalLogs.length === 0) {
+                const emptyLog = `<div class="py-6 text-center text-slate-400 text-sm">لا توجد عمليات سحب مسجلة حتى الآن.</div>`;
+                logBody.innerHTML = `<tr><td colspan="9">${emptyLog}</td></tr>`;
+                logMobileCards.innerHTML = emptyLog;
+            }
+
+            const formattedTotalCartons = Number.isInteger(totalWarehouseCartons)
+                ? totalWarehouseCartons
+                : totalWarehouseCartons.toFixed(2);
+
+            document.getElementById('kpiTotalCartons').textContent = formattedTotalCartons;
+            document.getElementById('kpiTotalUnits').textContent = totalWarehouseUnits.toLocaleString('en-US');
+            document.getElementById('kpiTotalCost').textContent = formatMoney(totalWarehouseCostBeforeSale);
+            document.getElementById('kpiTotalSellValue').textContent = formatMoney(totalWarehouseValueAfterSale);
+            document.getElementById('kpiExpectedProfit').TextView = formatMoney(totalWarehouseValueAfterSale - totalWarehouseCostBeforeSale);
+            document.getElementById('kpiExpectedProfit').textContent = formatMoney(totalWarehouseValueAfterSale - totalWarehouseCostBeforeSale);
+            document.getElementById('kpiTotalIncome').textContent = formatMoney(totalIncomeFromWithdrawals);
+            document.getElementById('kpiWithdrawalCount').textContent = withdrawalLogs.length;
+            document.getElementById('kpiRealizedProfit').textContent = formatMoney(totalRealizedProfit);
+
+            document.getElementById('footTotalCartons').textContent = `${formattedTotalCartons} كرتونة`;
+            document.getElementById('footTotalUnits').textContent = `${totalWarehouseUnits} قطعة`;
+            document.getElementById('footTotalBeforeSale').textContent = formatMoney(totalWarehouseCostBeforeSale);
+            document.getElementById('footTotalAfterSale').textContent = formatMoney(totalWarehouseValueAfterSale);
+            document.getElementById('logHeaderTotalIncome').textContent = formatMoney(totalIncomeFromWithdrawals);
+        }
+
+        window.onload = function() {
+            // Start with pristine clean data for fresh customer testing
+            if (!loadFromStorage()) {
+                initEmptyData();
+            }
+            renderAll();
+        };
+    </script>
+</body>
+</html>
