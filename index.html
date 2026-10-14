@@ -74,7 +74,7 @@
                     <h1 class="font-en font-bold text-xs sm:text-base tracking-wide text-white truncate">
                         Mohamed El-Kilany Warehouse
                     </h1>
-                    <p class="text-[10px] sm:text-xs text-slate-300 leading-tight truncate">نظام إدارة المخزون والمبيعات</p>
+                    <p class="text-[10px] sm:text-xs text-slate-300 leading-tight truncate">نظام إدارة المخزون والمبيعات السحابي</p>
                 </div>
             </div>
 
@@ -211,7 +211,6 @@
                     </div>
                 </div>
 
-                <!-- Form uses preventDefault in inline onsubmit -->
                 <form id="addStockForm" onsubmit="event.preventDefault(); addStockItem(); return false;" class="p-3.5 sm:p-5 space-y-3.5">
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div class="sm:col-span-2">
@@ -383,8 +382,8 @@
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-warehouse text-sap-blue text-base sm:text-lg"></i>
                     <div>
-                        <h3 class="font-bold text-slate-800 text-sm sm:text-base">رصيد مخزن البضاعة الحالي</h3>
-                        <p class="text-[11px] sm:text-xs text-slate-500">تحديث تلقائي لعدد الكراتين والقطع والأسعار</p>
+                        <h3 class="font-bold text-slate-800 text-sm sm:text-base">رصيد مخزن البضاعة الحالي (سحابي)</h3>
+                        <p class="text-[11px] sm:text-xs text-slate-500">مزامنة تلقائية حية عبر Firebase</p>
                     </div>
                 </div>
                 <div class="relative w-full sm:w-64">
@@ -444,7 +443,7 @@
                     <i class="fa-solid fa-file-invoice-dollar text-emerald-600 text-base sm:text-lg"></i>
                     <div>
                         <h3 class="font-bold text-slate-800 text-sm sm:text-base">سجل حركات السحب والدخل المحقق</h3>
-                        <p class="text-[11px] sm:text-xs text-slate-500">تفاصيل عمليات السحب من المخزن والعائد المالي</p>
+                        <p class="text-[11px] sm:text-xs text-slate-500">تفاصيل عمليات السحب من المخزن والعائد المالي السحابي</p>
                     </div>
                 </div>
                 <div class="bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg flex items-center justify-between sm:justify-start gap-2">
@@ -493,54 +492,72 @@
     <!-- Toast Container -->
     <div id="toastContainer" class="fixed bottom-20 md:bottom-5 left-4 right-4 sm:left-5 sm:right-auto z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
 
-    <script>
-        // Start with clean empty storage for accurate user testing
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'kilany-warehouse-app-v1';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' 
+            ? JSON.parse(__firebase_config) 
+            : { apiKey: "DEMO_KEY", authDomain: "demo.firebaseapp.com", projectId: "demo-project" };
+
+        let app, db, auth;
         let inventory = [];
         let withdrawalLogs = [];
 
-        const STORAGE_KEYS = {
-            INVENTORY: 'kilany_warehouse_inventory_clean_v3',
-            LOGS: 'kilany_warehouse_logs_clean_v3'
-        };
-
-        function saveToStorage() {
+        async function initFirebase() {
             try {
-                localStorage.setItem(STORAGE_KEYS.INVENTORY, JSON.stringify(inventory));
-                localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(withdrawalLogs));
-            } catch (e) {
-                console.warn('Could not save to localStorage', e);
-            }
-        }
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
 
-        function loadFromStorage() {
-            try {
-                const savedInv = localStorage.getItem(STORAGE_KEYS.INVENTORY);
-                const savedLogs = localStorage.getItem(STORAGE_KEYS.LOGS);
-                if (savedInv && savedLogs) {
-                    inventory = JSON.parse(savedInv);
-                    withdrawalLogs = JSON.parse(savedLogs);
-                    return true;
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
                 }
+
+                setupRealtimeListeners();
             } catch (e) {
-                console.warn('Could not read from localStorage', e);
+                console.warn('Firebase init fallback to local memory', e);
+                renderAll();
             }
-            return false;
         }
 
-        function initEmptyData() {
-            inventory = [];
-            withdrawalLogs = [];
-            saveToStorage();
+        function setupRealtimeListeners() {
+            const inventoryRef = collection(db, 'artifacts', appId, 'public', 'data', 'inventory');
+            onSnapshot(inventoryRef, (snapshot) => {
+                inventory = [];
+                snapshot.forEach(docSnap => {
+                    inventory.push({ id: docSnap.id, ...docSnap.data() });
+                });
+                renderAll();
+            }, (error) => {
+                console.error("Inventory error:", error);
+            });
+
+            const logsRef = collection(db, 'artifacts', appId, 'public', 'data', 'logs');
+            onSnapshot(logsRef, (snapshot) => {
+                withdrawalLogs = [];
+                snapshot.forEach(docSnap => {
+                    withdrawalLogs.push({ id: docSnap.id, ...docSnap.data() });
+                });
+                withdrawalLogs.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                renderAll();
+            }, (error) => {
+                console.error("Logs error:", error);
+            });
         }
 
-        function formatMoney(num) {
+        window.formatMoney = function(num) {
             return Number(num || 0).toLocaleString('en-US', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             });
-        }
+        };
 
-        function formatCartonBreakdown(totalUnits, unitsPerCarton) {
+        window.formatCartonBreakdown = function(totalUnits, unitsPerCarton) {
             const fullCartons = Math.floor(totalUnits / unitsPerCarton);
             const looseUnits = totalUnits % unitsPerCarton;
             const exactDecimalCartons = (totalUnits / unitsPerCarton).toFixed(2);
@@ -558,9 +575,9 @@
                     numericCartons: totalUnits / unitsPerCarton
                 };
             }
-        }
+        };
 
-        function showNotification(message, type = 'success') {
+        window.showNotification = function(message, type = 'success') {
             const container = document.getElementById('toastContainer');
             if (!container) return;
             const toast = document.createElement('div');
@@ -588,9 +605,9 @@
                 toast.style.transition = 'opacity 0.3s ease';
                 setTimeout(() => toast.remove(), 300);
             }, 3500);
-        }
+        };
 
-        function syncPrices(source) {
+        window.syncPrices = function(source) {
             const cartonCount = parseFloat(document.getElementById('cartonCount').value) || 0;
             const unitsPerCarton = parseFloat(document.getElementById('unitsPerCarton').value) || 0;
             
@@ -624,9 +641,9 @@
             document.getElementById('previewTotalUnits').textContent = `${totalUnits} قطعة`;
             document.getElementById('previewTotalCost').textContent = formatMoney(cartonCount * cBuyVal);
             document.getElementById('previewTotalSell').textContent = formatMoney(cartonCount * cSellVal);
-        }
+        };
 
-        function addStockItem() {
+        window.addStockItem = async function() {
             const name = document.getElementById('itemName').value.trim();
             const skuInput = document.getElementById('itemSku').value.trim();
             const cartonCount = parseInt(document.getElementById('cartonCount').value, 10);
@@ -641,46 +658,51 @@
                 return;
             }
 
-            if (isNaN(unitBuyPrice) || isNaN(cartonBuyPrice) || isNaN(unitSellPrice) || isNaN(cartonSellPrice)) {
-                showNotification('يرجى تحديد أسعار الشراء والبيع بدقة', 'error');
-                return;
-            }
-
             const addedUnits = cartonCount * unitsPerCarton;
-
             const existingItem = inventory.find(
                 item => item.name.toLowerCase() === name.toLowerCase() && item.unitsPerCarton === unitsPerCarton
             );
 
-            if (existingItem) {
-                existingItem.totalUnits += addedUnits;
-                existingItem.unitBuyPrice = unitBuyPrice;
-                existingItem.cartonBuyPrice = cartonBuyPrice;
-                existingItem.unitSellPrice = unitSellPrice;
-                existingItem.cartonSellPrice = cartonSellPrice;
-                showNotification(`تم تزويد رصيد (${name}) بعدد ${cartonCount} كرتونة بنجاح`, 'success');
-            } else {
-                const newSku = skuInput || `MK-${1000 + inventory.length + 1}`;
-                inventory.push({
-                    id: 'ITEM-' + Date.now(),
-                    sku: newSku,
-                    name,
-                    unitsPerCarton,
-                    totalUnits: addedUnits,
-                    unitBuyPrice,
-                    cartonBuyPrice,
-                    unitSellPrice,
-                    cartonSellPrice
-                });
-                showNotification(`تم إضافة الصنف (${name}) بعدد ${cartonCount} كرتونة إلى المخزن`, 'success');
+            try {
+                if (db) {
+                    if (existingItem) {
+                        const newTotal = existingItem.totalUnits + addedUnits;
+                        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'inventory', existingItem.id), {
+                            ...existingItem,
+                            totalUnits: newTotal,
+                            unitBuyPrice,
+                            cartonBuyPrice,
+                            unitSellPrice,
+                            cartonSellPrice
+                        });
+                        showNotification(`تم تزويد رصيد (${name}) بعدد ${cartonCount} كرتونة بنجاح`, 'success');
+                    } else {
+                        const itemId = 'ITEM-' + Date.now();
+                        const newSku = skuInput || `MK-${1000 + inventory.length + 1}`;
+                        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'inventory', itemId), {
+                            id: itemId,
+                            sku: newSku,
+                            name,
+                            unitsPerCarton,
+                            totalUnits: addedUnits,
+                            unitBuyPrice,
+                            cartonBuyPrice,
+                            unitSellPrice,
+                            cartonSellPrice
+                        });
+                        showNotification(`تم إضافة الصنف (${name}) بعدد ${cartonCount} كرتونة إلى المخزن`, 'success');
+                    }
+                }
+            } catch (e) {
+                console.error("Error saving to Firestore:", e);
+                showNotification('حدث خطأ أثناء الحفظ السحابي', 'error');
             }
 
             document.getElementById('addStockForm').reset();
             syncPrices('reset');
-            renderAll();
-        }
+        };
 
-        function updateWithdrawPreview() {
+        window.updateWithdrawPreview = function() {
             const selectEl = document.getElementById('withdrawItemSelect');
             const selectedId = selectEl.value;
             const withdrawType = document.getElementById('withdrawType').value;
@@ -715,9 +737,9 @@
 
             document.getElementById('withdrawPreviewUnits').textContent = `${unitsToDeduct} قطعة`;
             document.getElementById('withdrawPreviewIncome').textContent = formatMoney(incomeGenerated);
-        }
+        };
 
-        function withdrawStockItem() {
+        window.withdrawStockItem = async function() {
             const selectEl = document.getElementById('withdrawItemSelect');
             const selectedId = selectEl.value;
             const withdrawType = document.getElementById('withdrawType').value;
@@ -745,39 +767,41 @@
 
             item.totalUnits -= unitsToDeduct;
 
-            const costValue = withdrawType === 'cartons'
-                ? qty * item.cartonBuyPrice
-                : qty * item.unitBuyPrice;
-
-            const incomeValue = withdrawType === 'cartons'
-                ? qty * item.cartonSellPrice
-                : qty * item.unitSellPrice;
-
+            const costValue = withdrawType === 'cartons' ? qty * item.cartonBuyPrice : qty * item.unitBuyPrice;
+            const incomeValue = withdrawType === 'cartons' ? qty * item.cartonSellPrice : qty * item.unitSellPrice;
             const profit = incomeValue - costValue;
 
             const now = new Date();
             const timeStr = now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+            const logId = 'LOG-' + Date.now();
 
-            withdrawalLogs.unshift({
-                docId: 'DOC-' + Math.floor(1000 + Math.random() * 9000),
-                timestamp: `اليوم - ${timeStr}`,
-                itemName: item.name,
-                withdrawTypeLabel: withdrawType === 'cartons' ? `${qty} كرتونة` : `${qty} قطعة`,
-                unitsDeducted: unitsToDeduct,
-                costValue,
-                incomeValue,
-                profit,
-                note
-            });
-
-            showNotification(`تم سحب ${withdrawType === 'cartons' ? qty + ' كرتونة' : qty + ' قطعة'} من (${item.name}) وتسجيل دخل بقيمة ${formatMoney(incomeValue)}`, 'success');
+            try {
+                if (db) {
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'inventory', item.id), item);
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'logs', logId), {
+                        docId: 'DOC-' + Math.floor(1000 + Math.random() * 9000),
+                        timestamp: `اليوم - ${timeStr}`,
+                        itemName: item.name,
+                        withdrawTypeLabel: withdrawType === 'cartons' ? `${qty} كرتونة` : `${qty} قطعة`,
+                        unitsDeducted: unitsToDeduct,
+                        costValue,
+                        incomeValue,
+                        profit,
+                        note,
+                        createdAt: Date.now()
+                    });
+                }
+                showNotification(`تم سحب الكمية بنجاح وتسجيل دخل بقيمة ${formatMoney(incomeValue)}`, 'success');
+            } catch (e) {
+                console.error("Withdrawal error:", e);
+                showNotification('حدث خطأ أثناء إتمام عملية السحب', 'error');
+            }
 
             document.getElementById('withdrawQty').value = 1;
             noteInput.value = '';
-            renderAll();
-        }
+        };
 
-        function selectItemForWithdraw(itemId) {
+        window.selectItemForWithdraw = function(itemId) {
             const selectEl = document.getElementById('withdrawItemSelect');
             selectEl.value = itemId;
             updateWithdrawPreview();
@@ -787,23 +811,37 @@
             }
             setTimeout(() => document.getElementById('withdrawQty').focus(), 300);
             showNotification('تم تحديد الصنف في نموذج السحب السريع', 'info');
-        }
+        };
 
-        function deleteInventoryItem(itemId) {
-            inventory = inventory.filter(i => i.id !== itemId);
-            saveToStorage();
-            showNotification('تم حذف الصنف من سجل المخزن', 'info');
-            renderAll();
-        }
+        window.deleteInventoryItem = async function(itemId) {
+            try {
+                if (db) {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'inventory', itemId));
+                    showNotification('تم حذف الصنف من المخزن السحابي', 'info');
+                }
+            } catch (e) {
+                console.error("Delete error:", e);
+            }
+        };
 
-        function clearAllData() {
-            initEmptyData();
-            renderAll();
-            showNotification('تم تصفير المخزن والحركات بنجاح وجاهز للتجربة', 'info');
-        }
+        window.clearAllData = async function() {
+            if (!confirm('هل أنت متأكد من تصفير كافة بيانات المخزن والحركات؟')) return;
+            try {
+                if (db) {
+                    for (const item of inventory) {
+                        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'inventory', item.id));
+                    }
+                    for (const log of withdrawalLogs) {
+                        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'logs', log.id));
+                    }
+                    showNotification('تم تصفير المخزن والحركات بنجاح', 'info');
+                }
+            } catch (e) {
+                console.error("Clear error:", e);
+            }
+        };
 
         function renderAll() {
-            saveToStorage();
             const searchInput = document.getElementById('searchInventory');
             const searchQuery = searchInput ? searchInput.value.trim().toLowerCase() : '';
             const tbody = document.getElementById('inventoryTableBody');
@@ -1036,7 +1074,6 @@
             document.getElementById('kpiTotalUnits').textContent = totalWarehouseUnits.toLocaleString('en-US');
             document.getElementById('kpiTotalCost').textContent = formatMoney(totalWarehouseCostBeforeSale);
             document.getElementById('kpiTotalSellValue').textContent = formatMoney(totalWarehouseValueAfterSale);
-            document.getElementById('kpiExpectedProfit').TextView = formatMoney(totalWarehouseValueAfterSale - totalWarehouseCostBeforeSale);
             document.getElementById('kpiExpectedProfit').textContent = formatMoney(totalWarehouseValueAfterSale - totalWarehouseCostBeforeSale);
             document.getElementById('kpiTotalIncome').textContent = formatMoney(totalIncomeFromWithdrawals);
             document.getElementById('kpiWithdrawalCount').textContent = withdrawalLogs.length;
@@ -1049,13 +1086,7 @@
             document.getElementById('logHeaderTotalIncome').textContent = formatMoney(totalIncomeFromWithdrawals);
         }
 
-        window.onload = function() {
-            // Start with pristine clean data for fresh customer testing
-            if (!loadFromStorage()) {
-                initEmptyData();
-            }
-            renderAll();
-        };
+        initFirebase();
     </script>
 </body>
 </html>
