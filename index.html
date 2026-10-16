@@ -3,7 +3,8 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">  <title> MK SYSTEM </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MK SYSTEM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -48,7 +49,7 @@
                     <i class="fa-solid fa-box-open"></i>
                 </div>
                 <div>
-                    <h1 class="font-bold text-base tracking-wide text-white">مخزن الكيلاني</h1>
+                    <h1 class="font-bold text-base tracking-wide text-white font-en">MK SYSTEM</h1>
                     <p class="text-[10px] text-slate-400">إدارة البضاعة ببساطة</p>
                 </div>
             </div>
@@ -150,6 +151,11 @@
                             <input type="number" id="cartonSellPrice" required min="0" step="any" oninput="calculatePrices('sellCarton')" class="w-full bg-white border border-indigo-200 rounded-lg px-3 py-2 text-sm font-en outline-none">
                         </div>
                     </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1.5">ملاحظات (اختياري)</label>
+                    <input type="text" id="itemNote" placeholder="مثال: اسم المورد، تاريخ الصلاحية..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-primary">
                 </div>
                 
                 <button type="submit" class="w-full bg-brand-primary hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md flex items-center justify-center gap-2 text-sm transition">
@@ -318,6 +324,12 @@
                         <input type="number" id="editCartonSell" required min="0" step="any" oninput="calculateEditPrices('sellCarton')" class="w-full bg-white border border-indigo-200 rounded px-2 py-1.5 text-sm font-en outline-none">
                     </div>
                 </div>
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">ملاحظات</label>
+                    <input type="text" id="editItemNote" placeholder="أي ملاحظات عن الصنف..." class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-brand-primary">
+                </div>
+
                 <div class="pt-2 flex gap-3">
                     <button type="button" onclick="closeEditModal()" class="flex-1 bg-slate-100 text-slate-700 py-2.5 rounded-xl text-sm font-bold">إلغاء</button>
                     <button type="submit" class="flex-1 bg-brand-primary text-white py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-blue-500/30">حفظ التعديلات</button>
@@ -476,6 +488,7 @@
             document.getElementById('editCartonBuy').value = item.cartonBuyPrice;
             document.getElementById('editUnitSell').value = item.unitSellPrice;
             document.getElementById('editCartonSell').value = item.cartonSellPrice;
+            document.getElementById('editItemNote').value = item.note || '';
             
             const modal = document.getElementById('editModal');
             modal.classList.remove('hidden');
@@ -503,6 +516,7 @@
             const cartonBuyPrice = parseFloat(document.getElementById('cartonBuyPrice').value) || 0;
             const unitSellPrice = parseFloat(document.getElementById('unitSellPrice').value) || 0;
             const cartonSellPrice = parseFloat(document.getElementById('cartonSellPrice').value) || 0;
+            const note = document.getElementById('itemNote').value.trim();
             
             const existingItem = inventory.find(i => i.name === name);
 
@@ -510,13 +524,15 @@
                 if (existingItem) {
                     await db.collection("inventory").doc(existingItem.id).update({
                         totalUnits: existingItem.totalUnits + addedUnits,
-                        unitBuyPrice, cartonBuyPrice, unitSellPrice, cartonSellPrice
+                        unitBuyPrice, cartonBuyPrice, unitSellPrice, cartonSellPrice,
+                        note: note || existingItem.note || ""
                     });
                     showNotification(`تم زيادة وتحديث أسعار ${name}`, 'success');
                 } else {
                     await db.collection("inventory").add({
                         name, unitsPerCarton, totalUnits: addedUnits,
                         unitBuyPrice, cartonBuyPrice, unitSellPrice, cartonSellPrice,
+                        note,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                     showNotification(`تم إضافة ${name} للمخزن برصيد ${cartonCount} كرتونة`, 'success');
@@ -533,10 +549,11 @@
             const cartonBuyPrice = parseFloat(document.getElementById('editCartonBuy').value) || 0;
             const unitSellPrice = parseFloat(document.getElementById('editUnitSell').value) || 0;
             const cartonSellPrice = parseFloat(document.getElementById('editCartonSell').value) || 0;
+            const note = document.getElementById('editItemNote').value.trim();
 
             try {
                 await db.collection("inventory").doc(id).update({
-                    name, unitBuyPrice, cartonBuyPrice, unitSellPrice, cartonSellPrice
+                    name, unitBuyPrice, cartonBuyPrice, unitSellPrice, cartonSellPrice, note
                 });
                 showNotification("تم التعديل بنجاح", "success");
                 closeEditModal();
@@ -661,6 +678,7 @@
                             <div>تكلفة: <span class="font-en font-bold">${formatMoney(item.unitBuyPrice)}</span> للقطعة</div>
                             <div>بيع: <span class="font-en font-bold">${formatMoney(item.unitSellPrice)}</span> للقطعة</div>
                         </div>
+                        ${item.note ? `<div class="text-[10px] text-slate-600 mb-3 bg-slate-100 p-2 rounded-lg border border-slate-200"><i class="fa-solid fa-note-sticky text-slate-400 ml-1"></i> ${item.note}</div>` : ''}
                         <div class="flex gap-2">
                             <button onclick="document.getElementById('withdrawItemSelect').value='${item.id}'; updateWithdrawPreview(); scrollToSection('sectionWithdraw');" class="flex-[2] bg-emerald-100 hover:bg-emerald-200 text-emerald-700 py-2 rounded-lg text-xs font-bold transition">بيع / سحب</button>
                             <button onclick="openEditModal('${item.id}')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-2 rounded-lg text-xs font-bold transition">تعديل</button>
