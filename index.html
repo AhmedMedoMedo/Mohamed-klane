@@ -109,17 +109,17 @@
             <form id="addForm" onsubmit="event.preventDefault(); addStockItem();" class="p-4 space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-600 mb-1.5">اسم البضاعة <span class="text-red-500">*</span></label>
-                    <input type="text" id="itemName" required placeholder=" مثال: كشاف ليد" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-primary">
+                    <input type="text" id="itemName" required placeholder="مثال: زيت خليط 1 لتر" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-primary">
                 </div>
                 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-600 mb-1.5">جبت كام كرتونة؟ <span class="text-red-500">*</span></label>
-                        <input type="number" id="cartonCount" required min="1" placeholder="مثال: 5" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-en outline-none">
+                        <input type="number" id="cartonCount" required min="1" placeholder="مثال: 50" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-en outline-none">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-600 mb-1.5">الكرتونة فيها كام قطعة؟ <span class="text-red-500">*</span></label>
-                        <input type="number" id="unitsPerCarton" required min="1" value="" oninput="calculatePrices('all')" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-en outline-none">
+                        <input type="number" id="unitsPerCarton" required min="1" value="12" oninput="calculatePrices('all')" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-en outline-none">
                     </div>
                 </div>
 
@@ -187,6 +187,11 @@
                     </div>
                 </div>
 
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1.5">ملاحظات (اختياري)</label>
+                    <input type="text" id="withdrawNote" placeholder="مثال: مباعة لعميل كذا، أو مسحوبة للمنزل..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-accent">
+                </div>
+
                 <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-3 flex justify-between items-center">
                     <span class="text-xs font-bold text-emerald-700">المطلوب من الزبون:</span>
                     <span id="withdrawPreviewIncome" class="text-xl font-black font-en text-emerald-600">0.00</span>
@@ -227,6 +232,34 @@
                 <i class="fa-solid fa-clipboard-list text-slate-500"></i>
                 <h3 class="font-bold text-slate-800">سجل حركات البيع</h3>
             </div>
+            
+            <!-- أدوات الفلترة الجديدة -->
+            <div class="bg-white px-4 py-3 border-b border-slate-100">
+                <div class="relative mb-3">
+                    <i class="fa-solid fa-magnifying-glass absolute right-3 top-3 text-slate-400"></i>
+                    <input type="text" id="logSearchInput" onkeyup="renderAll()" placeholder="ابحث في السجل (باسم البضاعة أو الملاحظات)..." class="w-full bg-slate-100 border-none rounded-xl pr-10 pl-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-accent transition">
+                </div>
+                
+                <select id="logDateFilter" onchange="handleLogFilterChange()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-brand-primary transition mb-2">
+                    <option value="all">عرض كل الأوقات</option>
+                    <option value="today">مبيعات النهاردة بس</option>
+                    <option value="week">آخر 7 أيام (أسبوع)</option>
+                    <option value="month">آخر 30 يوم (شهر)</option>
+                    <option value="custom">تحديد تاريخ مخصص...</option>
+                </select>
+                
+                <div id="customDateContainer" class="hidden grid grid-cols-2 gap-3 mt-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1">من تاريخ</label>
+                        <input type="date" id="customStartDate" onchange="renderAll()" class="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-brand-primary">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1">إلى تاريخ</label>
+                        <input type="date" id="customEndDate" onchange="renderAll()" class="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-brand-primary">
+                    </div>
+                </div>
+            </div>
+
             <div id="withdrawLogMobileCards" class="divide-y divide-slate-100 max-h-96 overflow-y-auto">
                 <!-- سيتم إدراج السجلات هنا -->
             </div>
@@ -518,7 +551,7 @@
             const item = inventory.find(i => i.id === selectEl.value);
             const type = document.getElementById('withdrawType').value;
             const qty = parseInt(document.getElementById('withdrawQty').value);
-            const note = 'عملية بيع';
+            const noteInput = document.getElementById('withdrawNote').value.trim();
 
             if (!item || qty <= 0) return;
 
@@ -540,9 +573,10 @@
                 await db.collection("logs").add({
                     itemName: item.name, withdrawTypeLabel: type === 'cartons' ? `${qty} كرتونة` : `${qty} قطعة`,
                     unitsDeducted: unitsToDeduct, costValue: cost, incomeValue: income, profit: profit,
-                    note: note, timestamp: `اليوم ${timeStr}`, createdAt: Date.now()
+                    note: noteInput, timestamp: `اليوم ${timeStr}`, createdAt: Date.now()
                 });
                 document.getElementById('withdrawQty').value = 1;
+                document.getElementById('withdrawNote').value = '';
                 showNotification(`تم البيع وخصم البضاعة من المخزن`, 'success');
             } catch (error) { showNotification("حصلت مشكلة وقت البيع", "error"); }
         }
@@ -582,6 +616,17 @@
 
             const income = type === 'cartons' ? qty * item.cartonSellPrice : qty * item.unitSellPrice;
             document.getElementById('withdrawPreviewIncome').textContent = formatMoney(income);
+        }
+
+        function handleLogFilterChange() {
+            const filterVal = document.getElementById('logDateFilter').value;
+            const customContainer = document.getElementById('customDateContainer');
+            if (filterVal === 'custom') {
+                customContainer.classList.remove('hidden');
+            } else {
+                customContainer.classList.add('hidden');
+            }
+            renderAll();
         }
 
         function renderAll() {
@@ -630,23 +675,79 @@
             updateWithdrawPreview();
             filterInventory(); 
 
+            const filterVal = document.getElementById('logDateFilter') ? document.getElementById('logDateFilter').value : 'all';
+            const logSearchQuery = document.getElementById('logSearchInput') ? document.getElementById('logSearchInput').value.toLowerCase() : '';
+            
+            let filteredLogs = withdrawalLogs;
+            const now = new Date();
+            
+            if (filterVal !== 'all' || logSearchQuery !== '') {
+                filteredLogs = withdrawalLogs.filter(log => {
+                    const logDate = new Date(log.createdAt);
+                    let isDateMatch = true;
+                    
+                    if (filterVal === 'today') {
+                        isDateMatch = logDate.toDateString() === now.toDateString();
+                    } else if (filterVal === 'week') {
+                        const weekAgo = new Date();
+                        weekAgo.setDate(now.getDate() - 7);
+                        return logDate >= weekAgo;
+                    } else if (filterVal === 'month') {
+                        const monthAgo = new Date();
+                        monthAgo.setMonth(now.getMonth() - 30);
+                        return logDate >= monthAgo;
+                    } else if (filterVal === 'custom') {
+                        const startStr = document.getElementById('customStartDate').value;
+                        const endStr = document.getElementById('customEndDate').value;
+                        if (!startStr && !endStr) return true;
+                        
+                        let isAfterStart = true;
+                        let isBeforeEnd = true;
+                        
+                        if (startStr) {
+                            const startDate = new Date(startStr);
+                            startDate.setHours(0,0,0,0);
+                            isAfterStart = logDate >= startDate;
+                        }
+                        if (endStr) {
+                            const endDate = new Date(endStr);
+                            endDate.setHours(23,59,59,999);
+                            isBeforeEnd = logDate <= endDate;
+                        }
+                        isDateMatch = isAfterStart && isBeforeEnd;
+                    }
+                    
+                    let isSearchMatch = true;
+                    if (logSearchQuery !== '') {
+                        const itemNameMatch = (log.itemName || '').toLowerCase().includes(logSearchQuery);
+                        const noteMatch = (log.note || '').toLowerCase().includes(logSearchQuery);
+                        isSearchMatch = itemNameMatch || noteMatch;
+                    }
+                    
+                    return isDateMatch && isSearchMatch;
+                });
+            }
+
             let totalIncome = 0, totalProfit = 0;
             logContainer.innerHTML = '';
-            withdrawalLogs.forEach(log => {
+            filteredLogs.forEach(log => {
                 totalIncome += log.incomeValue; totalProfit += log.profit;
+                let noteHtml = log.note ? `<div class="text-[10px] text-slate-600 mt-2 bg-slate-100 p-2 rounded-lg border border-slate-200"><i class="fa-solid fa-note-sticky text-slate-400 ml-1"></i> ${log.note}</div>` : '';
+                
                 logContainer.innerHTML += `
-                    <div class="p-3.5 hover:bg-slate-50 transition">
+                    <div class="p-3.5 hover:bg-slate-50 transition border-b border-slate-50 last:border-0">
                         <div class="flex justify-between font-bold text-sm text-slate-800 mb-1">
                             <span>${log.itemName} <span class="text-xs text-slate-500 font-normal">(${log.withdrawTypeLabel})</span></span>
                             <span class="text-emerald-600 font-en">+${formatMoney(log.incomeValue)}</span>
                         </div>
                         <div class="flex justify-between items-center text-[11px] text-slate-500">
-                            <span><i class="fa-regular fa-clock mr-1"></i> ${log.timestamp}</span>
+                            <span><i class="fa-regular fa-clock ml-1"></i> ${log.timestamp}</span>
                             <span class="text-indigo-500 font-bold bg-indigo-50 px-2 py-0.5 rounded">مكسب: ${formatMoney(log.profit)}</span>
                         </div>
+                        ${noteHtml}
                     </div>`;
             });
-            if(withdrawalLogs.length === 0) logContainer.innerHTML = '<div class="p-6 text-center text-sm text-slate-400">مفيش أي حركات بيع متسجلة</div>';
+            if(filteredLogs.length === 0) logContainer.innerHTML = '<div class="p-6 text-center text-sm text-slate-400">مفيش أي حركات بيع متسجلة في الوقت ده</div>';
 
             document.getElementById('kpiTotalCartons').textContent = Number.isInteger(totalCartons) ? totalCartons : totalCartons.toFixed(2);
             document.getElementById('kpiTotalUnits').textContent = totalUnits;
