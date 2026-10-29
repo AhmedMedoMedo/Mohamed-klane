@@ -1,0 +1,7 @@
+{
+  "name": "MK SYSTEM",
+  "description": "نظام مبسط لإدارة بضاعة المخزن، الجرد، وسجل حركات البيع والسحب مع حساب التكاليف والأرباح",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
