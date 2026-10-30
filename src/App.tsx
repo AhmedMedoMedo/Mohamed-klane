@@ -612,7 +612,11 @@ export const App: React.FC = () => {
       />
 
       {/* Header */}
-      <Header onClearAll={handleClearAll} onScrollTo={scrollToSection} />
+      <Header
+        onClearAll={handleClearAll}
+        onScrollTo={scrollToSection}
+        isFirebaseActive={isFirebaseActive}
+      />
 
       {/* Main Content */}
       <main className="flex-grow max-w-3xl w-full mx-auto px-4 py-5 space-y-5">

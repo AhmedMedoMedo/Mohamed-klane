@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { InventoryItem } from '../firebase';
 import { formatMoney, formatCartonBreakdown } from '../utils/formatters';
 
@@ -9,6 +9,25 @@ interface InventorySectionProps {
   onDeleteItem: (item: InventoryItem) => void;
 }
 
+export type InventorySortOption =
+  | 'newest'
+  | 'highest_price'
+  | 'lowest_price'
+  | 'highest_qty'
+  | 'lowest_qty'
+  | 'oldest'
+  | 'alphabetical';
+
+const getItemTimestamp = (item: InventoryItem): number => {
+  if (!item.createdAt) return 0;
+  if (typeof item.createdAt === 'number') return item.createdAt;
+  if (typeof item.createdAt?.toMillis === 'function') return item.createdAt.toMillis();
+  if (typeof item.createdAt?.seconds === 'number') return item.createdAt.seconds * 1000;
+  if (item.createdAt instanceof Date) return item.createdAt.getTime();
+  const parsed = Date.parse(item.createdAt);
+  return isNaN(parsed) ? 0 : parsed;
+};
+
 export const InventorySection: React.FC<InventorySectionProps> = ({
   inventory,
   onQuickWithdraw,
@@ -16,25 +35,81 @@ export const InventorySection: React.FC<InventorySectionProps> = ({
   onDeleteItem,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<InventorySortOption>('newest');
 
-  const filteredItems = inventory.filter((item) =>
-    (item.name || '').toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // التصفية والترتيب
+  const sortedAndFilteredItems = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    const filtered = inventory.filter((item) =>
+      (item.name || '').toLowerCase().includes(query)
+    );
+
+    return [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case 'newest': {
+          const timeA = getItemTimestamp(a);
+          const timeB = getItemTimestamp(b);
+          if (timeA !== timeB) return timeB - timeA;
+          return (b.id || '').localeCompare(a.id || '');
+        }
+        case 'oldest': {
+          const timeA = getItemTimestamp(a);
+          const timeB = getItemTimestamp(b);
+          if (timeA !== timeB) return timeA - timeB;
+          return (a.id || '').localeCompare(b.id || '');
+        }
+        case 'highest_price': {
+          const priceA = a.unitSellPrice || (a.cartonSellPrice && a.unitsPerCarton ? a.cartonSellPrice / a.unitsPerCarton : 0) || 0;
+          const priceB = b.unitSellPrice || (b.cartonSellPrice && b.unitsPerCarton ? b.cartonSellPrice / b.unitsPerCarton : 0) || 0;
+          return priceB - priceA;
+        }
+        case 'lowest_price': {
+          const priceA = a.unitSellPrice || (a.cartonSellPrice && a.unitsPerCarton ? a.cartonSellPrice / a.unitsPerCarton : 0) || 0;
+          const priceB = b.unitSellPrice || (b.cartonSellPrice && b.unitsPerCarton ? b.cartonSellPrice / b.unitsPerCarton : 0) || 0;
+          return priceA - priceB;
+        }
+        case 'highest_qty': {
+          return (b.totalUnits || 0) - (a.totalUnits || 0);
+        }
+        case 'lowest_qty': {
+          return (a.totalUnits || 0) - (b.totalUnits || 0);
+        }
+        case 'alphabetical': {
+          return (a.name || '').localeCompare(b.name || '', 'ar');
+        }
+        default:
+          return 0;
+      }
+    });
+  }, [inventory, searchQuery, sortBy]);
+
+  const sortChips: { id: InventorySortOption; label: string; icon: string }[] = [
+    { id: 'newest', label: 'المضاف حديثاً', icon: 'fa-clock' },
+    { id: 'highest_qty', label: 'الأكثر كمية', icon: 'fa-arrow-up-wide-short' },
+    { id: 'lowest_qty', label: 'الأقل كمية', icon: 'fa-arrow-down-short-wide' },
+    { id: 'highest_price', label: 'الأعلى سعراً', icon: 'fa-arrow-trend-up' },
+    { id: 'lowest_price', label: 'الأرخص سعراً', icon: 'fa-arrow-trend-down' },
+    { id: 'oldest', label: 'الأقدم', icon: 'fa-calendar-days' },
+  ];
 
   return (
     <section className="bg-white rounded-2xl soft-shadow overflow-hidden">
+      {/* رأس قسم الجرد */}
       <div className="bg-slate-50 px-4 py-3 border-b border-slate-100 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <i className="fa-solid fa-warehouse text-slate-500"></i>
           <h3 className="font-bold text-slate-800">بضاعة المخزن (الجرد)</h3>
         </div>
-        <span className="text-xs bg-slate-200/70 text-slate-600 px-2.5 py-0.5 rounded-full font-bold">
-          {inventory.length} صنف
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs bg-slate-200/70 text-slate-600 px-2.5 py-0.5 rounded-full font-bold">
+            {inventory.length} صنف
+          </span>
+        </div>
       </div>
 
-      {/* شريط البحث */}
-      <div className="p-3 border-b border-slate-100 bg-white">
+      {/* شريط البحث وخيارات الترتيب */}
+      <div className="p-3 border-b border-slate-100 bg-white space-y-2.5">
+        {/* حقل البحث */}
         <div className="relative">
           <i className="fa-solid fa-magnifying-glass absolute right-3 top-3 text-slate-400"></i>
           <input
@@ -42,21 +117,76 @@ export const InventorySection: React.FC<InventorySectionProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="دور باسم البضاعة..."
-            className="w-full bg-slate-100 border-none rounded-xl pr-10 pl-4 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-primary transition"
+            className="w-full bg-slate-100 border-none rounded-xl pr-10 pl-8 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-primary transition"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute left-2.5 top-2.5 text-slate-400 hover:text-slate-600 text-xs w-5 h-5 flex items-center justify-center rounded-full bg-slate-200"
+              title="مسح البحث"
+            >
+              <i className="fa-solid fa-xmark"></i>
+            </button>
+          )}
+        </div>
+
+        {/* شريط فلتر وترتيب البضاعة */}
+        <div className="pt-1">
+          <div className="flex items-center justify-between gap-2 mb-1.5 text-xs">
+            <span className="text-slate-500 font-bold flex items-center gap-1.5">
+              <i className="fa-solid fa-arrow-down-short-wide text-brand-primary text-xs"></i>
+              <span>ترتيب البضاعة حسب:</span>
+            </span>
+
+            {/* قائمة منسدلة سريعة لاختيار الترتيب */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as InventorySortOption)}
+              className="bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-brand-primary cursor-pointer"
+            >
+              <option value="newest">🕒 المضاف حديثاً (الأحدث)</option>
+              <option value="highest_qty">📦 الأكثر كمية</option>
+              <option value="lowest_qty">⚠️ الأقل كمية (تنبيه النفاذ)</option>
+              <option value="highest_price">💎 الأعلى سعراً</option>
+              <option value="lowest_price">🏷️ الأرخص سعراً</option>
+              <option value="oldest">📅 الأقدم إضافة</option>
+              <option value="alphabetical">🔤 أبجدي (أ - ي)</option>
+            </select>
+          </div>
+
+          {/* أزرار سريعة للترتيب (Chips) سهلة الاستخدام بلمسة واحدة على الموبايل */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+            {sortChips.map((chip) => {
+              const isActive = sortBy === chip.id;
+              return (
+                <button
+                  key={chip.id}
+                  onClick={() => setSortBy(chip.id)}
+                  className={`px-2.5 py-1 rounded-lg font-bold text-[11px] whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 border ${
+                    isActive
+                      ? 'bg-slate-800 text-white border-slate-800 shadow-xs'
+                      : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  <i className={`fa-solid ${chip.icon} text-[10px] ${isActive ? 'text-brand-accent' : 'text-slate-400'}`}></i>
+                  <span>{chip.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
       {/* بطاقات البضاعة */}
       <div className="divide-y divide-slate-100 bg-white min-h-[100px]">
-        {filteredItems.length === 0 ? (
+        {sortedAndFilteredItems.length === 0 ? (
           <div className="p-6 text-center text-sm text-slate-400">
             {inventory.length === 0
               ? 'القائمة فاضية.. ضيف بضاعة الأول'
-              : 'مفيش صنف مطابق لنتيجة البحث'}
+              : 'مفيش صنف مطابق لنتيجة البحث أو الفلتر'}
           </div>
         ) : (
-          filteredItems.map((item) => {
+          sortedAndFilteredItems.map((item) => {
             const isOutOfStock = item.totalUnits <= 0;
             const uPerCarton = Math.max(1, item.unitsPerCarton || 1);
             const fullCartons = item.cartons !== undefined
