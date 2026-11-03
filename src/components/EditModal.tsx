@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { InventoryItem } from '../firebase';
+import { formatArabicDateTime, formatArabicDateOnly } from '../utils/formatters';
 
 interface EditModalProps {
   item: InventoryItem | null;
@@ -135,6 +136,33 @@ export const EditModal: React.FC<EditModalProps> = ({
               className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-brand-primary"
             />
           </div>
+
+          {/* معلومات مواعيد وتاريخ الإضافة */}
+          {(item.lastAddedAt || item.createdAt) && (
+            <div className="bg-slate-100/80 p-2.5 rounded-xl border border-slate-200 text-[11px] space-y-1">
+              <div className="flex items-center justify-between text-slate-700">
+                <span className="font-bold flex items-center gap-1">
+                  <i className="fa-solid fa-clock-rotate-left text-brand-primary text-xs"></i>
+                  <span>موعد آخر إضافة:</span>
+                </span>
+                <span className="font-en font-bold text-slate-800">
+                  {formatArabicDateTime(item.lastAddedAt || item.createdAt)}
+                  {item.lastAddedText ? ` (${item.lastAddedText})` : ''}
+                </span>
+              </div>
+              {item.createdAt && (
+                <div className="flex items-center justify-between text-slate-500 pt-1 border-t border-slate-200/60">
+                  <span className="flex items-center gap-1">
+                    <i className="fa-regular fa-calendar text-slate-400"></i>
+                    <span>تاريخ أول تسجيل للصنف:</span>
+                  </span>
+                  <span className="font-en font-bold text-slate-600">
+                    {formatArabicDateOnly(item.createdAt)}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* تعديل رصيد الكراتين والقطع الفرط يدوياً بشكل مستقل */}
           <div className="bg-blue-50/60 p-3 rounded-xl border border-blue-100">

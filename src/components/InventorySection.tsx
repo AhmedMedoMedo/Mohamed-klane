@@ -1,6 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { InventoryItem } from '../firebase';
-import { formatMoney, formatCartonBreakdown } from '../utils/formatters';
+import {
+  formatMoney,
+  formatCartonBreakdown,
+  parseTimestamp,
+  formatArabicDateTime,
+  formatArabicDateOnly,
+  formatTimeAgoArabic,
+} from '../utils/formatters';
 
 interface InventorySectionProps {
   inventory: InventoryItem[];
@@ -10,6 +17,7 @@ interface InventorySectionProps {
 }
 
 export type InventorySortOption =
+  | 'last_added'
   | 'newest'
   | 'highest_price'
   | 'lowest_price'
@@ -18,16 +26,6 @@ export type InventorySortOption =
   | 'oldest'
   | 'alphabetical';
 
-const getItemTimestamp = (item: InventoryItem): number => {
-  if (!item.createdAt) return 0;
-  if (typeof item.createdAt === 'number') return item.createdAt;
-  if (typeof item.createdAt?.toMillis === 'function') return item.createdAt.toMillis();
-  if (typeof item.createdAt?.seconds === 'number') return item.createdAt.seconds * 1000;
-  if (item.createdAt instanceof Date) return item.createdAt.getTime();
-  const parsed = Date.parse(item.createdAt);
-  return isNaN(parsed) ? 0 : parsed;
-};
-
 export const InventorySection: React.FC<InventorySectionProps> = ({
   inventory,
   onQuickWithdraw,
@@ -35,7 +33,8 @@ export const InventorySection: React.FC<InventorySectionProps> = ({
   onDeleteItem,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<InventorySortOption>('newest');
+  const [sortBy, setSortBy] = useState<InventorySortOption>('last_added');
+  const [historyModalItem, setHistoryModalItem] = useState<InventoryItem | null>(null);
 
   // التصفية والترتيب
   const sortedAndFilteredItems = useMemo(() => {
@@ -46,26 +45,44 @@ export const InventorySection: React.FC<InventorySectionProps> = ({
 
     return [...filtered].sort((a, b) => {
       switch (sortBy) {
+        case 'last_added': {
+          const timeA = parseTimestamp(a.lastAddedAt || a.createdAt);
+          const timeB = parseTimestamp(b.lastAddedAt || b.createdAt);
+          if (timeA !== timeB) return timeB - timeA;
+          return (b.id || '').localeCompare(a.id || '');
+        }
         case 'newest': {
-          const timeA = getItemTimestamp(a);
-          const timeB = getItemTimestamp(b);
+          const timeA = parseTimestamp(a.createdAt || a.lastAddedAt);
+          const timeB = parseTimestamp(b.createdAt || b.lastAddedAt);
           if (timeA !== timeB) return timeB - timeA;
           return (b.id || '').localeCompare(a.id || '');
         }
         case 'oldest': {
-          const timeA = getItemTimestamp(a);
-          const timeB = getItemTimestamp(b);
+          const timeA = parseTimestamp(a.createdAt || a.lastAddedAt);
+          const timeB = parseTimestamp(b.createdAt || b.lastAddedAt);
           if (timeA !== timeB) return timeA - timeB;
           return (a.id || '').localeCompare(b.id || '');
         }
         case 'highest_price': {
-          const priceA = a.unitSellPrice || (a.cartonSellPrice && a.unitsPerCarton ? a.cartonSellPrice / a.unitsPerCarton : 0) || 0;
-          const priceB = b.unitSellPrice || (b.cartonSellPrice && b.unitsPerCarton ? b.cartonSellPrice / b.unitsPerCarton : 0) || 0;
+          const priceA =
+            a.unitSellPrice ||
+            (a.cartonSellPrice && a.unitsPerCarton ? a.cartonSellPrice / a.unitsPerCarton : 0) ||
+            0;
+          const priceB =
+            b.unitSellPrice ||
+            (b.cartonSellPrice && b.unitsPerCarton ? b.cartonSellPrice / b.unitsPerCarton : 0) ||
+            0;
           return priceB - priceA;
         }
         case 'lowest_price': {
-          const priceA = a.unitSellPrice || (a.cartonSellPrice && a.unitsPerCarton ? a.cartonSellPrice / a.unitsPerCarton : 0) || 0;
-          const priceB = b.unitSellPrice || (b.cartonSellPrice && b.unitsPerCarton ? b.cartonSellPrice / b.unitsPerCarton : 0) || 0;
+          const priceA =
+            a.unitSellPrice ||
+            (a.cartonSellPrice && a.unitsPerCarton ? a.cartonSellPrice / a.unitsPerCarton : 0) ||
+            0;
+          const priceB =
+            b.unitSellPrice ||
+            (b.cartonSellPrice && b.unitsPerCarton ? b.cartonSellPrice / b.unitsPerCarton : 0) ||
+            0;
           return priceA - priceB;
         }
         case 'highest_qty': {
@@ -84,7 +101,8 @@ export const InventorySection: React.FC<InventorySectionProps> = ({
   }, [inventory, searchQuery, sortBy]);
 
   const sortChips: { id: InventorySortOption; label: string; icon: string }[] = [
-    { id: 'newest', label: 'المضاف حديثاً', icon: 'fa-clock' },
+    { id: 'last_added', label: 'آخر تزويد بالمخزن', icon: 'fa-clock-rotate-left' },
+    { id: 'newest', label: 'أحدث تسجيل', icon: 'fa-sparkles' },
     { id: 'highest_qty', label: 'الأكثر كمية', icon: 'fa-arrow-up-wide-short' },
     { id: 'lowest_qty', label: 'الأقل كمية', icon: 'fa-arrow-down-short-wide' },
     { id: 'highest_price', label: 'الأعلى سعراً', icon: 'fa-arrow-trend-up' },
@@ -144,7 +162,8 @@ export const InventorySection: React.FC<InventorySectionProps> = ({
               onChange={(e) => setSortBy(e.target.value as InventorySortOption)}
               className="bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-brand-primary cursor-pointer"
             >
-              <option value="newest">🕒 المضاف حديثاً (الأحدث)</option>
+              <option value="last_added">🕒 آخر تزويد / إضافة بالمخزن</option>
+              <option value="newest">✨ أحدث تسجيل (تاريخ الإنشاء)</option>
               <option value="highest_qty">📦 الأكثر كمية</option>
               <option value="lowest_qty">⚠️ الأقل كمية (تنبيه النفاذ)</option>
               <option value="highest_price">💎 الأعلى سعراً</option>
@@ -168,7 +187,11 @@ export const InventorySection: React.FC<InventorySectionProps> = ({
                       : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                   }`}
                 >
-                  <i className={`fa-solid ${chip.icon} text-[10px] ${isActive ? 'text-brand-accent' : 'text-slate-400'}`}></i>
+                  <i
+                    className={`fa-solid ${chip.icon} text-[10px] ${
+                      isActive ? 'text-brand-accent' : 'text-slate-400'
+                    }`}
+                  ></i>
                   <span>{chip.label}</span>
                 </button>
               );
@@ -189,18 +212,28 @@ export const InventorySection: React.FC<InventorySectionProps> = ({
           sortedAndFilteredItems.map((item) => {
             const isOutOfStock = item.totalUnits <= 0;
             const uPerCarton = Math.max(1, item.unitsPerCarton || 1);
-            const fullCartons = item.cartons !== undefined
-              ? Number(item.cartons)
-              : Math.floor(item.totalUnits / uPerCarton);
-            const looseUnits = item.looseUnits !== undefined
-              ? Number(item.looseUnits)
-              : (item.totalUnits % uPerCarton);
+            const fullCartons =
+              item.cartons !== undefined
+                ? Number(item.cartons)
+                : Math.floor(item.totalUnits / uPerCarton);
+            const looseUnits =
+              item.looseUnits !== undefined
+                ? Number(item.looseUnits)
+                : item.totalUnits % uPerCarton;
 
             // إذا كان الصنف فرط فقط ولا يحتوي على قيمة فعلية للكرتونة، يظهر 0، ولو بقيمة فعلية تظهر القيمة
-            const hasRealCartonValue = fullCartons > 0
-              ? (Boolean(item.unitsPerCarton) && item.unitsPerCarton > 0)
-              : (Boolean(item.unitsPerCarton) && item.unitsPerCarton > 0 && item.unitsPerCarton !== 12);
+            const hasRealCartonValue =
+              fullCartons > 0
+                ? Boolean(item.unitsPerCarton) && item.unitsPerCarton > 0
+                : Boolean(item.unitsPerCarton) &&
+                  item.unitsPerCarton > 0 &&
+                  item.unitsPerCarton !== 12;
             const cartonUnitsDisplay = hasRealCartonValue ? Number(item.unitsPerCarton) : 0;
+
+            const lastAddedTime = item.lastAddedAt || item.createdAt;
+            const createdTime = item.createdAt;
+            const hasHistory =
+              Array.isArray(item.additionHistory) && item.additionHistory.length > 0;
 
             return (
               <div
@@ -219,7 +252,14 @@ export const InventorySection: React.FC<InventorySectionProps> = ({
                         : 'bg-brand-primary/10 text-brand-primary'
                     }`}
                   >
-                    {isOutOfStock ? 'نفذت الكمية' : formatCartonBreakdown(item.totalUnits, item.unitsPerCarton, item.cartons, item.looseUnits)}
+                    {isOutOfStock
+                      ? 'نفذت الكمية'
+                      : formatCartonBreakdown(
+                          item.totalUnits,
+                          item.unitsPerCarton,
+                          item.cartons,
+                          item.looseUnits
+                        )}
                   </span>
                 </div>
 
@@ -288,12 +328,59 @@ export const InventorySection: React.FC<InventorySectionProps> = ({
                 </div>
 
                 {/* أسعار التكلفة والبيع */}
-                <div className="flex justify-between items-center text-[11px] text-slate-500 mb-3 bg-white/70 px-1">
+                <div className="flex justify-between items-center text-[11px] text-slate-500 mb-2.5 bg-white/70 px-1">
                   <div>
                     تكلفة القطعة: <span className="font-en font-bold text-amber-700">{formatMoney(item.unitBuyPrice)}</span>
                   </div>
                   <div>
                     بيع القطعة: <span className="font-en font-bold text-emerald-700">{formatMoney(item.unitSellPrice)}</span>
+                  </div>
+                </div>
+
+                {/* بطاقة تاريخ وموعد إضافة القطع أو الكراتين للمخزن */}
+                <div className="mb-3 p-2.5 rounded-xl bg-gradient-to-r from-slate-50 via-blue-50/30 to-indigo-50/20 border border-slate-200/90 text-xs">
+                  <div className="flex items-center justify-between flex-wrap gap-1.5 mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-5 h-5 rounded-full bg-blue-100 text-brand-primary flex items-center justify-center text-[10px]">
+                        <i className="fa-solid fa-clock-rotate-left"></i>
+                      </div>
+                      <span className="font-bold text-slate-700 text-[11px]">موعد آخر إضافة للمخزن:</span>
+                      <span className="font-en font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200 text-[11px]">
+                        {lastAddedTime ? formatArabicDateTime(lastAddedTime) : 'مسجل مسبقاً'}
+                      </span>
+                      {item.lastAddedText && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          {item.lastAddedText}
+                        </span>
+                      )}
+                    </div>
+
+                    {lastAddedTime && (
+                      <span className="text-[10px] text-blue-600 bg-blue-100/60 font-bold px-2 py-0.5 rounded-full">
+                        {formatTimeAgoArabic(lastAddedTime)}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1.5 border-t border-slate-200/70">
+                    <div className="flex items-center gap-1.5">
+                      <i className="fa-regular fa-calendar-check text-slate-400 text-xs"></i>
+                      <span>تاريخ أول تسجيل للصنف:</span>
+                      <span className="font-en font-bold text-slate-700">
+                        {createdTime ? formatArabicDateOnly(createdTime) : (lastAddedTime ? formatArabicDateOnly(lastAddedTime) : 'مسجل مسبقاً')}
+                      </span>
+                    </div>
+
+                    {/* زر الاطلاع على سجل التوريدات والإضافات السابقة */}
+                    <button
+                      type="button"
+                      onClick={() => setHistoryModalItem(item)}
+                      className="text-brand-primary hover:text-brand-primary/80 font-bold flex items-center gap-1 text-[11px] transition cursor-pointer hover:underline"
+                      title="عرض سجل ومواعيد إضافات هذا الصنف بالتفصيل"
+                    >
+                      <i className="fa-solid fa-list-ol text-xs"></i>
+                      <span>سجل الإضافات {hasHistory ? `(${item.additionHistory!.length})` : ''}</span>
+                    </button>
                   </div>
                 </div>
 
@@ -333,6 +420,141 @@ export const InventorySection: React.FC<InventorySectionProps> = ({
           })
         )}
       </div>
+
+      {/* نافذة منبثقة لسجل مواعيد وتفاصيل إضافات وتوريدات الصنف */}
+      {historyModalItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[85vh]">
+            {/* رأس النافذة */}
+            <div className="bg-slate-900 text-white px-5 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-brand-accent">
+                  <i className="fa-solid fa-clock-rotate-left"></i>
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm">سجل مواعيد إضافات وتوريدات الصنف</h3>
+                  <p className="text-[11px] text-slate-300 font-bold">{historyModalItem.name}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setHistoryModalItem(null)}
+                className="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer text-xs"
+              >
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            {/* محتوى السجل */}
+            <div className="p-4 overflow-y-auto space-y-3">
+              {/* ملخص الرصيد الحالي للصنف */}
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+                <div>
+                  <span className="text-slate-500 font-bold block text-[10px]">الرصيد المتاح حالياً بالمخزن:</span>
+                  <span className="font-bold text-slate-800 text-sm">
+                    {formatCartonBreakdown(
+                      historyModalItem.totalUnits,
+                      historyModalItem.unitsPerCarton,
+                      historyModalItem.cartons,
+                      historyModalItem.looseUnits
+                    )}
+                  </span>
+                </div>
+                <div className="text-left font-en">
+                  <span className="text-[10px] text-slate-400 block font-sans">إجمالي القطع</span>
+                  <span className="font-black text-emerald-600 text-base">
+                    {historyModalItem.totalUnits}
+                  </span>
+                </div>
+              </div>
+
+              {/* قائمة الإضافات والتوريدات السابقة */}
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <i className="fa-solid fa-timeline text-brand-primary"></i>
+                  <span>الحركات المسجلة لإضافة القطع أو الكراتين:</span>
+                </h4>
+
+                {historyModalItem.additionHistory && historyModalItem.additionHistory.length > 0 ? (
+                  <div className="space-y-2">
+                    {historyModalItem.additionHistory.map((rec, idx) => (
+                      <div
+                        key={rec.id || idx}
+                        className="p-3 rounded-xl bg-white border border-slate-200 shadow-2xs hover:border-slate-300 transition"
+                      >
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                            <i
+                              className={`fa-solid ${
+                                rec.type === 'cartons'
+                                  ? 'fa-boxes-stacked text-blue-500'
+                                  : 'fa-shapes text-emerald-600'
+                              } text-xs`}
+                            ></i>
+                            <span className="bg-slate-100 px-2 py-0.5 rounded font-en font-bold text-slate-800">
+                              {rec.text || `+${rec.quantity} ${rec.type === 'cartons' ? 'كرتونة' : 'قطعة'}`}
+                            </span>
+                          </span>
+
+                          <span className="text-[10px] text-slate-400 font-bold">
+                            {formatTimeAgoArabic(rec.timestamp)}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-[11px] text-slate-500">
+                          <span className="font-en">
+                            <i className="fa-regular fa-calendar-days ml-1 text-slate-400"></i>
+                            {formatArabicDateTime(rec.timestamp)}
+                          </span>
+                          {idx === 0 && (
+                            <span className="text-[9px] bg-blue-100 text-blue-700 font-bold px-1.5 py-0.5 rounded">
+                              أحدث إضافة
+                            </span>
+                          )}
+                        </div>
+
+                        {rec.note && (
+                          <div className="mt-1.5 text-[10px] text-slate-600 bg-slate-50 p-1.5 rounded border border-slate-100">
+                            ملاحظة: {rec.note}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center space-y-1.5">
+                    <p className="text-xs text-slate-600 font-bold">
+                      تم تسجيل الصنف بموعد إضافة مبدئي:
+                    </p>
+                    <div className="font-en text-xs text-brand-primary font-bold">
+                      {historyModalItem.lastAddedAt || historyModalItem.createdAt
+                        ? formatArabicDateTime(historyModalItem.lastAddedAt || historyModalItem.createdAt)
+                        : 'تاريخ الإضافة مسجل مسبقاً'}
+                    </div>
+                    {historyModalItem.lastAddedText && (
+                      <div className="text-[11px] text-emerald-700 font-bold">
+                        الكمية: {historyModalItem.lastAddedText}
+                      </div>
+                    )}
+                    <p className="text-[10px] text-slate-400">
+                      أي تزويد قادم لهذا الصنف (كراتين أو قطع فرط) سيتم تسجيل موعده وتاريخه وتفاصيله تلقائياً في هذا السجل.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* تذييل النافذة */}
+            <div className="p-3 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button
+                onClick={() => setHistoryModalItem(null)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+              >
+                إغلاق
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };

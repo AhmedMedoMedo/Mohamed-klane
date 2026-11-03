@@ -4,6 +4,16 @@ import {
   Firestore,
 } from 'firebase/firestore';
 
+export interface StockAdditionRecord {
+  id: string;
+  timestamp: number;
+  dateStr: string;
+  type: 'cartons' | 'units';
+  quantity: number;
+  text: string;
+  note?: string;
+}
+
 export interface InventoryItem {
   id: string;
   name: string;
@@ -16,7 +26,12 @@ export interface InventoryItem {
   unitSellPrice: number;
   cartonSellPrice: number;
   note?: string;
-  createdAt?: any;
+  createdAt?: any;               // تاريخ ووقت أول تسجيل للصنف في المخزن
+  lastAddedAt?: any;             // موعد وتاريخ آخر إضافة أو توريد للصنف
+  lastAddedQuantity?: number;    // كمية آخر إضافة
+  lastAddedType?: 'cartons' | 'units'; // نوع آخر إضافة (كرتونة أو قطعة فرط)
+  lastAddedText?: string;        // وصف آخر إضافة مثل "+5 كرتونة" أو "+10 قطعة فرط"
+  additionHistory?: StockAdditionRecord[]; // سجل التوريدات والإضافات السابقة للصنف
 }
 
 export interface WithdrawalLog {

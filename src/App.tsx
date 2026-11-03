@@ -3,6 +3,7 @@ import {
   db,
   isFirebaseActive,
   InventoryItem,
+  StockAdditionRecord,
   WithdrawalLog,
 } from './firebase';
 import {
@@ -209,9 +210,23 @@ export const App: React.FC = () => {
         ? `${data.quantity} كرتونة`
         : `${data.quantity} قطعة فرط`;
 
+    const nowMs = Date.now();
+    const newAdditionRecord: StockAdditionRecord = {
+      id: 'add_' + nowMs + '_' + Math.random().toString(36).substring(2, 6),
+      timestamp: nowMs,
+      dateStr: new Date(nowMs).toISOString(),
+      type: data.addType,
+      quantity: data.quantity,
+      text: `+${addedDescription}`,
+      note: data.note ? data.note.trim() : undefined,
+    };
+
     try {
       if (isFirebaseActive && db) {
         if (existing) {
+          const prevHistory = Array.isArray(existing.additionHistory) ? existing.additionHistory : [];
+          const updatedHistory = [newAdditionRecord, ...prevHistory].slice(0, 30);
+
           await updateDoc(doc(db, 'inventory', existing.id), {
             cartons: newCartons,
             looseUnits: newLooseUnits,
@@ -222,6 +237,11 @@ export const App: React.FC = () => {
             unitSellPrice: data.unitSellPrice,
             cartonSellPrice: data.cartonSellPrice,
             note: data.note || existing.note || '',
+            lastAddedAt: serverTimestamp(),
+            lastAddedQuantity: data.quantity,
+            lastAddedType: data.addType,
+            lastAddedText: `+${addedDescription}`,
+            additionHistory: updatedHistory,
           });
           showNotification(`تمت زيادة رصيد ${existing.name} بمقدار ${addedDescription}`, 'success');
         } else {
@@ -237,6 +257,11 @@ export const App: React.FC = () => {
             cartonSellPrice: data.cartonSellPrice,
             note: data.note,
             createdAt: serverTimestamp(),
+            lastAddedAt: serverTimestamp(),
+            lastAddedQuantity: data.quantity,
+            lastAddedType: data.addType,
+            lastAddedText: `+${addedDescription}`,
+            additionHistory: [newAdditionRecord],
           });
           showNotification(
             `تم إضافة ${data.name} للمخزن برصيد ${addedDescription}`,
@@ -246,6 +271,9 @@ export const App: React.FC = () => {
       } else {
         // Local state fallback
         if (existing) {
+          const prevHistory = Array.isArray(existing.additionHistory) ? existing.additionHistory : [];
+          const updatedHistory = [newAdditionRecord, ...prevHistory].slice(0, 30);
+
           setInventory((prev) =>
             prev.map((item) =>
               item.id === existing.id
@@ -260,6 +288,11 @@ export const App: React.FC = () => {
                     unitSellPrice: data.unitSellPrice,
                     cartonSellPrice: data.cartonSellPrice,
                     note: data.note || item.note || '',
+                    lastAddedAt: nowMs,
+                    lastAddedQuantity: data.quantity,
+                    lastAddedType: data.addType,
+                    lastAddedText: `+${addedDescription}`,
+                    additionHistory: updatedHistory,
                   }
                 : item
             )
@@ -267,7 +300,7 @@ export const App: React.FC = () => {
           showNotification(`تمت زيادة رصيد ${existing.name} بمقدار ${addedDescription}`, 'success');
         } else {
           const newItem: InventoryItem = {
-            id: 'item_' + Date.now(),
+            id: 'item_' + nowMs,
             name: data.name,
             cartons: newCartons,
             looseUnits: newLooseUnits,
@@ -278,7 +311,12 @@ export const App: React.FC = () => {
             unitSellPrice: data.unitSellPrice,
             cartonSellPrice: data.cartonSellPrice,
             note: data.note,
-            createdAt: Date.now(),
+            createdAt: nowMs,
+            lastAddedAt: nowMs,
+            lastAddedQuantity: data.quantity,
+            lastAddedType: data.addType,
+            lastAddedText: `+${addedDescription}`,
+            additionHistory: [newAdditionRecord],
           };
           setInventory((prev) => [newItem, ...prev]);
           showNotification(
