@@ -210,25 +210,32 @@ export const InventorySection: React.FC<InventorySectionProps> = ({
           </div>
         ) : (
           sortedAndFilteredItems.map((item) => {
-            const isOutOfStock = item.totalUnits <= 0;
-            const uPerCarton = Math.max(1, item.unitsPerCarton || 1);
-            const fullCartons =
-              item.cartons !== undefined
-                ? Number(item.cartons)
-                : Math.floor(item.totalUnits / uPerCarton);
-            const looseUnits =
-              item.looseUnits !== undefined
-                ? Number(item.looseUnits)
-                : item.totalUnits % uPerCarton;
+            const isOutOfStock =
+              (item.totalUnits || 0) <= 0 ||
+              (Number(item.cartons || 0) === 0 && Number(item.looseUnits || 0) === 0);
 
-            // إذا كان الصنف فرط فقط ولا يحتوي على قيمة فعلية للكرتونة، يظهر 0، ولو بقيمة فعلية تظهر القيمة
-            const hasRealCartonValue =
-              fullCartons > 0
-                ? Boolean(item.unitsPerCarton) && item.unitsPerCarton > 0
-                : Boolean(item.unitsPerCarton) &&
-                  item.unitsPerCarton > 0 &&
-                  item.unitsPerCarton !== 12;
-            const cartonUnitsDisplay = hasRealCartonValue ? Number(item.unitsPerCarton) : 0;
+            const fullCartons = isOutOfStock
+              ? 0
+              : (item.cartons !== undefined
+                  ? Number(item.cartons)
+                  : (item.unitsPerCarton && item.unitsPerCarton > 0
+                      ? Math.floor(item.totalUnits / item.unitsPerCarton)
+                      : 0));
+
+            const looseUnits = isOutOfStock
+              ? 0
+              : (item.looseUnits !== undefined
+                  ? Number(item.looseUnits)
+                  : (item.unitsPerCarton && item.unitsPerCarton > 0
+                      ? item.totalUnits % item.unitsPerCarton
+                      : item.totalUnits));
+
+            // تصفير خانة عدد الكرتونة (يظهر 0) تماماً عند نفاذ الصنف لحين إضافة كراتين بعدد جديد أو إضافة قطع فرط
+            const cartonUnitsDisplay = isOutOfStock
+              ? 0
+              : (fullCartons > 0 && item.unitsPerCarton && item.unitsPerCarton > 0
+                  ? Number(item.unitsPerCarton)
+                  : 0);
 
             const lastAddedTime = item.lastAddedAt || item.createdAt;
             const createdTime = item.createdAt;

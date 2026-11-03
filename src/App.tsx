@@ -36,7 +36,20 @@ export const App: React.FC = () => {
   const [inventory, setInventory] = useState<InventoryItem[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_INVENTORY);
-      return saved ? JSON.parse(saved) : [];
+      if (!saved) return [];
+      const parsed: InventoryItem[] = JSON.parse(saved);
+      return parsed.map((item) => {
+        const isDepleted =
+          (item.totalUnits || 0) <= 0 ||
+          (Number(item.cartons || 0) === 0 && Number(item.looseUnits || 0) === 0);
+        return {
+          ...item,
+          cartons: isDepleted ? 0 : (item.cartons ?? 0),
+          looseUnits: isDepleted ? 0 : (item.looseUnits ?? 0),
+          totalUnits: isDepleted ? 0 : (item.totalUnits ?? 0),
+          unitsPerCarton: isDepleted ? 0 : (item.unitsPerCarton ?? 0),
+        };
+      });
     } catch {
       return [];
     }
@@ -110,16 +123,34 @@ export const App: React.FC = () => {
           const items: InventoryItem[] = [];
           snapshot.forEach((d) => {
             const data = d.data();
-            const upc = Math.max(1, Number(data.unitsPerCarton) || 1);
             const total = Number(data.totalUnits || 0);
-            const c = data.cartons !== undefined ? Number(data.cartons) : Math.floor(total / upc);
-            const l = data.looseUnits !== undefined ? Number(data.looseUnits) : total % upc;
+            const c = data.cartons !== undefined ? Number(data.cartons) : 0;
+            const l = data.looseUnits !== undefined ? Number(data.looseUnits) : total;
+            const isDepleted = total <= 0 || (c === 0 && l === 0);
+
+            // إذا كان الصنف نافذاً (رصيده 0)، يتم تصفير خانة وسعة الكرتونة إلى 0 تماماً
+            let upc = isDepleted ? 0 : Number(data.unitsPerCarton || 0);
+            if (!isDepleted && upc === 0 && c > 0) {
+              upc = 1;
+            }
+
+            // إذا كان الصنف نافذاً في فايربيز لكن ما زالت خانة الكرتونة مسجلة برقم قديم، نقوم بتصفيرها في فايربيز فوراً
+            const firestore = db;
+            if (isDepleted && Number(data.unitsPerCarton || 0) > 0 && firestore) {
+              updateDoc(doc(firestore, 'inventory', d.id), {
+                unitsPerCarton: 0,
+                cartons: 0,
+                looseUnits: 0,
+                totalUnits: 0,
+              }).catch((err) => console.warn('Auto-sanitize depleted item error:', err));
+            }
+
             items.push({
               id: d.id,
               ...data,
-              cartons: c,
-              looseUnits: l,
-              totalUnits: total,
+              cartons: isDepleted ? 0 : c,
+              looseUnits: isDepleted ? 0 : l,
+              totalUnits: isDepleted ? 0 : total,
               unitsPerCarton: upc,
             } as InventoryItem);
           });
@@ -171,39 +202,33 @@ export const App: React.FC = () => {
           (i) => normalizeArabic(i.name) === normalizeArabic(data.name)
         );
 
-    const uPerCarton = data.addType === 'cartons'
-      ? Math.max(1, data.unitsPerCarton || 1)
-      : (existing && existing.cartons && existing.cartons > 0 ? (existing.unitsPerCarton || 0) : 0);
+    const isExistingDepleted =
+      !existing ||
+      (existing.totalUnits || 0) <= 0 ||
+      (Number(existing.cartons || 0) === 0 && Number(existing.looseUnits || 0) === 0);
+
+    const curCartons = (!existing || isExistingDepleted) ? 0 : Number(existing.cartons || 0);
+    const curLoose = (!existing || isExistingDepleted) ? 0 : Number(existing.looseUnits || 0);
+    const oldUnitsPerCarton = (!existing || isExistingDepleted) ? 0 : Number(existing.unitsPerCarton || 0);
 
     let newCartons = 0;
     let newLooseUnits = 0;
+    let finalUnitsPerCarton = 0;
 
-    if (existing) {
-      const curCartons = existing.cartons !== undefined
-        ? existing.cartons
-        : (uPerCarton > 0 ? Math.floor(existing.totalUnits / uPerCarton) : 0);
-      const curLoose = existing.looseUnits !== undefined
-        ? existing.looseUnits
-        : (uPerCarton > 0 ? existing.totalUnits % uPerCarton : existing.totalUnits);
-
-      if (data.addType === 'cartons') {
-        newCartons = curCartons + data.quantity;
-        newLooseUnits = curLoose; // لا تتحول القطع الفرط إلى كرتونة تلقائياً
-      } else {
-        newCartons = curCartons; // لا تزيد الكراتين وتزيد القطع الفرط فقط
-        newLooseUnits = curLoose + data.quantity;
-      }
+    if (data.addType === 'cartons') {
+      newCartons = curCartons + data.quantity;
+      newLooseUnits = curLoose;
+      // إذا كان الصنف نافذاً أو جديداً، نعتمد عدد القطع في الكرتونة المحدد حديثاً
+      finalUnitsPerCarton = Math.max(1, data.unitsPerCarton || oldUnitsPerCarton || 1);
     } else {
-      if (data.addType === 'cartons') {
-        newCartons = data.quantity;
-        newLooseUnits = 0;
-      } else {
-        newCartons = 0;
-        newLooseUnits = data.quantity;
-      }
+      // إضافة قطع فرط فقط
+      newCartons = curCartons;
+      newLooseUnits = curLoose + data.quantity;
+      // إذا كان له كراتين سابقة يستمر بها، أما إذا كان نافذاً أو فرط فقط تظل سعة الكرتونة 0
+      finalUnitsPerCarton = curCartons > 0 ? oldUnitsPerCarton : 0;
     }
 
-    const newTotalUnits = (newCartons * Math.max(1, uPerCarton)) + newLooseUnits;
+    const newTotalUnits = (newCartons * (finalUnitsPerCarton > 0 ? finalUnitsPerCarton : 1)) + newLooseUnits;
 
     const addedDescription =
       data.addType === 'cartons'
@@ -231,7 +256,7 @@ export const App: React.FC = () => {
             cartons: newCartons,
             looseUnits: newLooseUnits,
             totalUnits: newTotalUnits,
-            unitsPerCarton: uPerCarton,
+            unitsPerCarton: finalUnitsPerCarton,
             unitBuyPrice: data.unitBuyPrice,
             cartonBuyPrice: data.cartonBuyPrice,
             unitSellPrice: data.unitSellPrice,
@@ -250,7 +275,7 @@ export const App: React.FC = () => {
             cartons: newCartons,
             looseUnits: newLooseUnits,
             totalUnits: newTotalUnits,
-            unitsPerCarton: uPerCarton,
+            unitsPerCarton: finalUnitsPerCarton,
             unitBuyPrice: data.unitBuyPrice,
             cartonBuyPrice: data.cartonBuyPrice,
             unitSellPrice: data.unitSellPrice,
@@ -282,7 +307,7 @@ export const App: React.FC = () => {
                     cartons: newCartons,
                     looseUnits: newLooseUnits,
                     totalUnits: newTotalUnits,
-                    unitsPerCarton: uPerCarton,
+                    unitsPerCarton: finalUnitsPerCarton,
                     unitBuyPrice: data.unitBuyPrice,
                     cartonBuyPrice: data.cartonBuyPrice,
                     unitSellPrice: data.unitSellPrice,
@@ -305,7 +330,7 @@ export const App: React.FC = () => {
             cartons: newCartons,
             looseUnits: newLooseUnits,
             totalUnits: newTotalUnits,
-            unitsPerCarton: uPerCarton,
+            unitsPerCarton: finalUnitsPerCarton,
             unitBuyPrice: data.unitBuyPrice,
             cartonBuyPrice: data.cartonBuyPrice,
             unitSellPrice: data.unitSellPrice,
@@ -383,6 +408,12 @@ export const App: React.FC = () => {
 
     const newTotalUnits = (newCartons * uPerCarton) + newLooseUnits;
     const unitsToDeduct = item.totalUnits - newTotalUnits;
+    const isNowOutOfStock = newTotalUnits <= 0 || (newCartons <= 0 && newLooseUnits <= 0);
+    const finalCartons = isNowOutOfStock ? 0 : Math.max(0, newCartons);
+    const finalLoose = isNowOutOfStock ? 0 : Math.max(0, newLooseUnits);
+    const finalTotal = isNowOutOfStock ? 0 : Math.max(0, newTotalUnits);
+    // تصفير خانة وسعة الكرتونة إلى 0 إذا نفذ الصنف لحين إضافة بضاعة جديدة
+    const finalUnitsPerCarton = isNowOutOfStock ? 0 : (item.unitsPerCarton || 0);
 
     const cost =
       data.type === 'cartons'
@@ -399,9 +430,10 @@ export const App: React.FC = () => {
     try {
       if (isFirebaseActive && db) {
         await updateDoc(doc(db, 'inventory', item.id), {
-          cartons: newCartons,
-          looseUnits: newLooseUnits,
-          totalUnits: newTotalUnits,
+          cartons: finalCartons,
+          looseUnits: finalLoose,
+          totalUnits: finalTotal,
+          unitsPerCarton: finalUnitsPerCarton,
         });
 
         await addDoc(collection(db, 'logs'), {
@@ -422,9 +454,10 @@ export const App: React.FC = () => {
             i.id === item.id
               ? {
                   ...i,
-                  cartons: newCartons,
-                  looseUnits: newLooseUnits,
-                  totalUnits: newTotalUnits,
+                  cartons: finalCartons,
+                  looseUnits: finalLoose,
+                  totalUnits: finalTotal,
+                  unitsPerCarton: finalUnitsPerCarton,
                 }
               : i
           )
@@ -453,14 +486,25 @@ export const App: React.FC = () => {
 
   // Edit item
   const handleSaveEdit = async (updatedItem: InventoryItem) => {
+    const isDepleted =
+      (updatedItem.totalUnits || 0) <= 0 ||
+      (Number(updatedItem.cartons || 0) === 0 && Number(updatedItem.looseUnits || 0) === 0);
+
+    const finalCartons = isDepleted ? 0 : (updatedItem.cartons ?? 0);
+    const finalLoose = isDepleted ? 0 : (updatedItem.looseUnits ?? 0);
+    const finalTotal = isDepleted ? 0 : updatedItem.totalUnits;
+    const finalUnitsPerCarton = isDepleted
+      ? 0
+      : (finalCartons > 0 ? (updatedItem.unitsPerCarton || 0) : 0);
+
     try {
       if (isFirebaseActive && db) {
         await updateDoc(doc(db, 'inventory', updatedItem.id), {
           name: updatedItem.name,
-          cartons: updatedItem.cartons ?? 0,
-          looseUnits: updatedItem.looseUnits ?? 0,
-          totalUnits: updatedItem.totalUnits,
-          unitsPerCarton: updatedItem.unitsPerCarton,
+          cartons: finalCartons,
+          looseUnits: finalLoose,
+          totalUnits: finalTotal,
+          unitsPerCarton: finalUnitsPerCarton,
           unitBuyPrice: updatedItem.unitBuyPrice,
           cartonBuyPrice: updatedItem.cartonBuyPrice,
           unitSellPrice: updatedItem.unitSellPrice,
@@ -469,7 +513,17 @@ export const App: React.FC = () => {
         });
       } else {
         setInventory((prev) =>
-          prev.map((i) => (i.id === updatedItem.id ? updatedItem : i))
+          prev.map((i) =>
+            i.id === updatedItem.id
+              ? {
+                  ...updatedItem,
+                  cartons: finalCartons,
+                  looseUnits: finalLoose,
+                  totalUnits: finalTotal,
+                  unitsPerCarton: finalUnitsPerCarton,
+                }
+              : i
+          )
         );
       }
       setIsEditModalOpen(false);

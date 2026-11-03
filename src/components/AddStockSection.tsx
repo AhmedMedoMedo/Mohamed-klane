@@ -31,7 +31,7 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
   // نوع الإضافة: كراتين مقفولة أو قطع فرط
   const [addType, setAddType] = useState<'cartons' | 'units'>('cartons');
   const [quantity, setQuantity] = useState<string>('');
-  const [unitsPerCarton, setUnitsPerCarton] = useState<string>('12');
+  const [unitsPerCarton, setUnitsPerCarton] = useState<string>('');
 
   // أسعار التكلفة
   const [unitBuyPrice, setUnitBuyPrice] = useState<string>('');
@@ -82,33 +82,46 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
     setName(item.name);
     setIsDropdownOpen(false);
 
-    const uPerCarton = Math.max(1, item.unitsPerCarton || 1);
-    setUnitsPerCarton(String(uPerCarton));
+    const isDepleted =
+      (item.totalUnits || 0) <= 0 ||
+      (Number(item.cartons || 0) === 0 && Number(item.looseUnits || 0) === 0);
+
+    const hasRealCarton = !isDepleted && Number(item.cartons || 0) > 0 && (item.unitsPerCarton || 0) > 0;
+    const uPerCarton = hasRealCarton ? (item.unitsPerCarton || 0) : 0;
+
+    // إذا كان الصنف نافذاً أو فرط فقط، نترك خانة عدد الكرتونة فارغة ليحدد المستخدم سعة الكرتونة الجديدة بحرية
+    setUnitsPerCarton(uPerCarton > 0 ? String(uPerCarton) : '');
 
     const qty = parseInt(quantity) || 0;
 
-    if (item.unitBuyPrice !== undefined) {
+    if (item.unitBuyPrice !== undefined && item.unitBuyPrice > 0) {
       setUnitBuyPrice(String(item.unitBuyPrice));
       if (qty > 0) {
         setTotalBatchBuyPrice((item.unitBuyPrice * qty).toFixed(2));
       }
-    }
-    if (item.cartonBuyPrice !== undefined) {
+      if (uPerCarton > 0) {
+        setCartonBuyPrice((item.unitBuyPrice * uPerCarton).toFixed(2));
+      } else {
+        setCartonBuyPrice('');
+      }
+    } else if (item.cartonBuyPrice !== undefined && item.cartonBuyPrice > 0 && uPerCarton > 0) {
       setCartonBuyPrice(String(item.cartonBuyPrice));
-    } else if (item.unitBuyPrice !== undefined) {
-      setCartonBuyPrice((item.unitBuyPrice * uPerCarton).toFixed(2));
+      setUnitBuyPrice((item.cartonBuyPrice / uPerCarton).toFixed(2));
     }
 
-    if (item.unitSellPrice !== undefined) {
+    if (item.unitSellPrice !== undefined && item.unitSellPrice > 0) {
       setUnitSellPrice(String(item.unitSellPrice));
       if (qty > 0) {
         setTotalBatchSellPrice((item.unitSellPrice * qty).toFixed(2));
       }
-    }
-    if (item.cartonSellPrice !== undefined) {
+      if (uPerCarton > 0) {
+        setCartonSellPrice((item.unitSellPrice * uPerCarton).toFixed(2));
+      } else {
+        setCartonSellPrice('');
+      }
+    } else if (item.cartonSellPrice !== undefined && item.cartonSellPrice > 0 && uPerCarton > 0) {
       setCartonSellPrice(String(item.cartonSellPrice));
-    } else if (item.unitSellPrice !== undefined) {
-      setCartonSellPrice((item.unitSellPrice * uPerCarton).toFixed(2));
+      setUnitSellPrice((item.cartonSellPrice / uPerCarton).toFixed(2));
     }
 
     if (item.note) {
@@ -121,7 +134,7 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
     setSelectedItem(null);
     setName('');
     setQuantity('');
-    setUnitsPerCarton('12');
+    setUnitsPerCarton('');
     setUnitBuyPrice('');
     setCartonBuyPrice('');
     setTotalBatchBuyPrice('');
@@ -289,11 +302,11 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
 
     const units = addType === 'cartons'
       ? (parseInt(unitsPerCarton) || 1)
-      : (selectedItem && selectedItem.cartons && selectedItem.cartons > 0 ? (selectedItem.unitsPerCarton || 0) : 0);
+      : (selectedItem && Number(selectedItem.cartons || 0) > 0 ? (selectedItem.unitsPerCarton || 0) : 0);
     const uBuy = parseFloat(unitBuyPrice) || 0;
-    const cBuy = parseFloat(cartonBuyPrice) || (uBuy * (units || 1));
+    const cBuy = parseFloat(cartonBuyPrice) || (units > 0 ? (uBuy * units) : 0);
     const uSell = parseFloat(unitSellPrice) || 0;
-    const cSell = parseFloat(cartonSellPrice) || (uSell * (units || 1));
+    const cSell = parseFloat(cartonSellPrice) || (units > 0 ? (uSell * units) : 0);
 
     onAddStock({
       existingId: selectedItem ? selectedItem.id : undefined,
@@ -312,7 +325,7 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
     setSelectedItem(null);
     setName('');
     setQuantity('');
-    setUnitsPerCarton('12');
+    setUnitsPerCarton('');
     setUnitBuyPrice('');
     setCartonBuyPrice('');
     setTotalBatchBuyPrice('');
@@ -506,8 +519,15 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1.5">
-                الكرتونة فيها كام قطعة؟ <span className="text-red-500">*</span>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5 flex items-center justify-between">
+                <span>
+                  الكرتونة فيها كام قطعة؟ <span className="text-red-500">*</span>
+                </span>
+                {selectedItem && (selectedItem.totalUnits || 0) <= 0 && (
+                  <span className="text-[10px] text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                    حدد سعة الكرتونة الجديدة
+                  </span>
+                )}
               </label>
               <input
                 type="number"
@@ -515,7 +535,7 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
                 min="1"
                 value={unitsPerCarton}
                 onChange={(e) => handleUnitsPerCartonInput(e.target.value)}
-                placeholder="مثال: 12"
+                placeholder="مثال: 12 أو 24 أو 50"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-en outline-none focus:border-brand-primary"
               />
             </div>

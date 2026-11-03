@@ -28,22 +28,23 @@ export const EditModal: React.FC<EditModalProps> = ({
 
   useEffect(() => {
     if (item) {
-      const c = item.cartons !== undefined ? item.cartons : 0;
-      const l = item.looseUnits !== undefined ? item.looseUnits : item.totalUnits;
-      const hasRealCarton = c > 0
-        ? (Boolean(item.unitsPerCarton) && item.unitsPerCarton > 0)
-        : (Boolean(item.unitsPerCarton) && item.unitsPerCarton > 0 && item.unitsPerCarton !== 12);
-      const upc = hasRealCarton ? (item.unitsPerCarton || 0) : 0;
+      const isDepleted =
+        (item.totalUnits || 0) <= 0 ||
+        (Number(item.cartons || 0) === 0 && Number(item.looseUnits || 0) === 0);
+
+      const c = isDepleted ? 0 : (item.cartons !== undefined ? item.cartons : 0);
+      const l = isDepleted ? 0 : (item.looseUnits !== undefined ? item.looseUnits : item.totalUnits);
+      const upc = isDepleted ? 0 : (c > 0 && item.unitsPerCarton ? item.unitsPerCarton : 0);
 
       setName(item.name || '');
       setCartons(String(c));
       setLooseUnits(String(l));
       setUnitsPerCarton(String(upc));
 
-      setUnitBuyPrice(item.unitBuyPrice !== undefined ? String(item.unitBuyPrice) : '');
-      setCartonBuyPrice(item.cartonBuyPrice !== undefined ? String(item.cartonBuyPrice) : '');
-      setUnitSellPrice(item.unitSellPrice !== undefined ? String(item.unitSellPrice) : '');
-      setCartonSellPrice(item.cartonSellPrice !== undefined ? String(item.cartonSellPrice) : '');
+      setUnitBuyPrice(item.unitBuyPrice !== undefined && item.unitBuyPrice > 0 ? String(item.unitBuyPrice) : '');
+      setCartonBuyPrice(item.cartonBuyPrice !== undefined && item.cartonBuyPrice > 0 ? String(item.cartonBuyPrice) : '');
+      setUnitSellPrice(item.unitSellPrice !== undefined && item.unitSellPrice > 0 ? String(item.unitSellPrice) : '');
+      setCartonSellPrice(item.cartonSellPrice !== undefined && item.cartonSellPrice > 0 ? String(item.cartonSellPrice) : '');
       setNote(item.note || '');
     }
   }, [item]);
@@ -90,15 +91,17 @@ export const EditModal: React.FC<EditModalProps> = ({
 
     const c = Math.max(0, parseInt(cartons) || 0);
     const l = Math.max(0, parseInt(looseUnits) || 0);
+    const isDepleted = c === 0 && l === 0;
     const rawUpc = parseInt(unitsPerCarton) || 0;
-    const upc = c > 0 ? Math.max(1, rawUpc) : Math.max(0, rawUpc);
-    const total = (c * (upc > 0 ? upc : 1)) + l;
+    // إذا نفذ الصنف أو أصبح 0 كراتين و 0 قطع، تصبح الكرتونة 0 تماماً
+    const upc = isDepleted ? 0 : (c > 0 ? Math.max(1, rawUpc) : 0);
+    const total = isDepleted ? 0 : ((c * (upc > 0 ? upc : 1)) + l);
 
     onSave({
       ...item,
       name: name.trim(),
-      cartons: c,
-      looseUnits: l,
+      cartons: isDepleted ? 0 : c,
+      looseUnits: isDepleted ? 0 : l,
       totalUnits: total,
       unitsPerCarton: upc,
       unitBuyPrice: parseFloat(unitBuyPrice) || 0,
@@ -194,7 +197,7 @@ export const EditModal: React.FC<EditModalProps> = ({
                 <label className="block text-[10px] text-slate-600 font-bold mb-1">القطعة/كرتونة</label>
                 <input
                   type="number"
-                  min="1"
+                  min="0"
                   value={unitsPerCarton}
                   onChange={(e) => setUnitsPerCarton(e.target.value)}
                   className="w-full bg-white border border-blue-200 rounded-lg px-2.5 py-1.5 text-sm font-en outline-none text-center"
