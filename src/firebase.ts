@@ -1,6 +1,9 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import {
+  initializeFirestore,
   getFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
   Firestore,
 } from 'firebase/firestore';
 
@@ -66,7 +69,19 @@ try {
   } else {
     app = getApps()[0];
   }
-  db = getFirestore(app);
+
+  // تفعيل التخزين المؤقت المحلي المستمر (IndexedDB Persistence)
+  // يتيح للنظام العمل بدون إنترنت كلياً، وحفظ كل العمليات محلياً ومزامنتها فور عودة الاتصال
+  try {
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    });
+  } catch (initErr) {
+    console.warn("Using existing Firestore instance:", initErr);
+    db = getFirestore(app);
+  }
   isFirebaseActive = true;
 } catch (e) {
   console.warn("Firebase initialization warning:", e);

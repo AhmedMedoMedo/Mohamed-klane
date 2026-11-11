@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+    <linearGradient id="boxTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+    <linearGradient id="boxLeft" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#d97706" />
+      <stop offset="100%" stop-color="#b45309" />
+    </linearGradient>
+    <linearGradient id="boxRight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#b45309" />
+      <stop offset="100%" stop-color="#92400e" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background rounded rect -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)"/>
+  
+  <!-- Outer glow ring -->
+  <rect x="24" y="24" width="464" height="464" rx="96" fill="none" stroke="#f59e0b" stroke-opacity="0.25" stroke-width="4" />
+
+  <!-- 3D Warehouse Box Icon -->
+  <g transform="translate(256, 230)">
+    <!-- Top face -->
+    <polygon points="0,-105 135,-35 0,35 -135,-35" fill="url(#boxTop)" />
+    <!-- Left face -->
+    <polygon points="-135,-35 0,35 0,165 -135,95" fill="url(#boxLeft)" />
+    <!-- Right face -->
+    <polygon points="0,35 135,-35 135,95 0,165" fill="url(#boxRight)" />
+    
+    <!-- Box Flap & Tape detail -->
+    <polygon points="-40,-15 0,5 40,-15 0,-35" fill="#fde68a" fill-opacity="0.65" />
+    <polygon points="0,5 0,165 18,155 18, -4" fill="#fde68a" fill-opacity="0.4" />
+  </g>
+
+  <!-- Cloud Sync Overlay Icon in bottom-right corner -->
+  <g transform="translate(360, 360)">
+    <circle cx="0" cy="0" r="54" fill="#0284c7" stroke="#ffffff" stroke-width="6"/>
+    <!-- Cloud shape -->
+    <path d="M-22,-2 C-22,-14 -12,-22 0,-22 C10,-22 18,-15 20,-5 C26,-4 30,1 30,7 C30,15 23,21 15,21 L-18,21 C-26,21 -32,15 -32,7 C-32,0 -26,-2 -22,-2 Z" fill="#ffffff"/>
+    <!-- Sync arrows -->
+    <path d="M-6,0 L0,-7 L6,0 M0,-7 L0,11" stroke="#0284c7" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+
+  <!-- Title Text: MK SYSTEM -->
+  <text x="256" y="445" font-family="'Cairo', system-ui, -apple-system, sans-serif" font-weight="900" font-size="44" fill="#ffffff" text-anchor="middle" letter-spacing="4">MK SYSTEM</text>
+</svg>
