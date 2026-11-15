@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { InventoryItem } from '../firebase';
 import {
   formatMoney,
@@ -39,6 +40,14 @@ export const InventorySection: React.FC<InventorySectionProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<InventorySortOption>('last_added');
   const [historyModalItem, setHistoryModalItem] = useState<InventoryItem | null>(null);
+
+  useEffect(() => {
+    if (!historyModalItem) return;
+    document.body.classList.add('overflow-hidden');
+    return () => {
+      document.body.classList.remove('overflow-hidden');
+    };
+  }, [historyModalItem]);
 
   // التصفية والترتيب
   const sortedAndFilteredItems = useMemo(() => {
@@ -571,10 +580,17 @@ export const InventorySection: React.FC<InventorySectionProps> = ({
       </div>
 
       {/* نافذة منبثقة لسجل مواعيد وتفاصيل إضافات وتوريدات الصنف */}
-      {historyModalItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-fade">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col max-h-[85vh]">
-            <div className="bg-slate-900 dark:bg-slate-950 text-white px-5 py-4 flex items-center justify-between">
+      {historyModalItem &&
+        createPortal(
+          <div
+            onClick={() => setHistoryModalItem(null)}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 max-h-[90vh] overflow-y-auto w-[95%] max-w-md flex flex-col animate-fade"
+            >
+              <div className="bg-slate-900 dark:bg-slate-950 text-white px-5 py-4 flex items-center justify-between sticky top-0 z-10 rounded-t-2xl">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-brand-accent">
                   <i className="fa-solid fa-clock-rotate-left"></i>
@@ -690,7 +706,7 @@ export const InventorySection: React.FC<InventorySectionProps> = ({
               </div>
             </div>
 
-            <div className="p-3 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-800 flex justify-end sticky bottom-0 rounded-b-2xl">
               <button
                 onClick={() => setHistoryModalItem(null)}
                 className="px-4 py-2 bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white rounded-xl text-xs font-bold transition cursor-pointer"
@@ -699,8 +715,9 @@ export const InventorySection: React.FC<InventorySectionProps> = ({
               </button>
             </div>
           </div>
-        </div>
-      )}
+        </div>,
+          document.body
+        )}
     </section>
   );
 };

@@ -1,9 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { usePWAInstall } from '../utils/usePWAInstall';
 
 export const PWAInstallButton: React.FC = () => {
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
   const [showIOSGuide, setShowIOSGuide] = useState(false);
+
+  useEffect(() => {
+    if (!showIOSGuide) return;
+    document.body.classList.add('overflow-hidden');
+    return () => {
+      document.body.classList.remove('overflow-hidden');
+    };
+  }, [showIOSGuide]);
 
   // If already installed, don't show prompt
   if (isInstalled) {
@@ -37,9 +46,16 @@ export const PWAInstallButton: React.FC = () => {
           <span>تثبيت</span>
         </button>
 
-        {showIOSGuide && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade">
-            <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-5 shadow-2xl text-slate-800 dark:text-slate-100 space-y-3">
+        {showIOSGuide &&
+          createPortal(
+            <div
+              onClick={() => setShowIOSGuide(false)}
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs"
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="max-h-[90vh] overflow-y-auto w-[95%] max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-5 shadow-2xl text-slate-800 dark:text-slate-100 space-y-3 animate-fade"
+              >
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
                 <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <i className="fa-brands fa-apple text-lg text-slate-900 dark:text-white"></i>
@@ -72,8 +88,9 @@ export const PWAInstallButton: React.FC = () => {
                 فهمت، حسناً
               </button>
             </div>
-          </div>
-        )}
+          </div>,
+            document.body
+          )}
       </>
     );
   }

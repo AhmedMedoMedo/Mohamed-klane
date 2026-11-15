@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { InventoryItem } from '../firebase';
 import { formatArabicDateTime, formatArabicDateOnly } from '../utils/formatters';
 
@@ -48,6 +49,14 @@ export const EditModal: React.FC<EditModalProps> = ({
       setNote(item.note || '');
     }
   }, [item]);
+
+  useEffect(() => {
+    if (!isOpen || !item) return;
+    document.body.classList.add('overflow-hidden');
+    return () => {
+      document.body.classList.remove('overflow-hidden');
+    };
+  }, [isOpen, item]);
 
   if (!isOpen || !item) return null;
 
@@ -112,9 +121,9 @@ export const EditModal: React.FC<EditModalProps> = ({
     });
   };
 
-  return (
-    <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade">
-      <div className="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl w-full max-w-md soft-shadow overflow-hidden my-8 max-h-[90vh] overflow-y-auto">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl max-h-[90vh] overflow-y-auto w-[95%] max-w-md soft-shadow animate-fade">
         <div className="bg-slate-50 dark:bg-slate-800/80 px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center rounded-t-2xl sticky top-0 z-10">
           <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
             <i className="fa-solid fa-pen-to-square text-brand-primary dark:text-blue-400"></i>
@@ -294,6 +303,7 @@ export const EditModal: React.FC<EditModalProps> = ({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

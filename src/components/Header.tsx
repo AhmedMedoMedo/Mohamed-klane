@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { PWAInstallButton } from './PWAInstallButton';
 import { formatArabicDateTime } from '../utils/formatters';
 
@@ -28,6 +29,14 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleDarkMode,
 }) => {
   const [showStatusModal, setShowStatusModal] = useState(false);
+
+  useEffect(() => {
+    if (!showStatusModal) return;
+    document.body.classList.add('overflow-hidden');
+    return () => {
+      document.body.classList.remove('overflow-hidden');
+    };
+  }, [showStatusModal]);
 
   // Status configuration
   let statusBadgeClass = 'bg-emerald-950/70 text-emerald-300 border-emerald-500/40 hover:bg-emerald-900/80';
@@ -128,9 +137,16 @@ export const Header: React.FC<HeaderProps> = ({
       </header>
 
       {/* نافذة تفاصيل الاتصال والمزامنة السحابية والتخزين بدون إنترنت */}
-      {showStatusModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 animate-fade">
-          <div className="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl max-w-sm w-full p-5 shadow-2xl text-slate-800 dark:text-slate-100 space-y-4">
+      {showStatusModal &&
+        createPortal(
+          <div
+            onClick={() => setShowStatusModal(false)}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-2xl max-h-[90vh] overflow-y-auto w-[95%] max-w-md p-5 shadow-2xl text-slate-800 dark:text-slate-100 space-y-4 animate-fade"
+            >
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2 text-brand-primary">
                 <i className="fa-solid fa-cloud-arrow-up text-xl text-blue-600 dark:text-blue-400"></i>
@@ -218,8 +234,9 @@ export const Header: React.FC<HeaderProps> = ({
               إغلاق
             </button>
           </div>
-        </div>
-      )}
+        </div>,
+          document.body
+        )}
     </>
   );
 };
