@@ -960,7 +960,7 @@ export const App: React.FC = () => {
         {/* شريط التبويبات العلوي */}
         <nav
           aria-label="التنقل الرئيسي"
-          className="bg-white dark:bg-slate-900 p-1.5 rounded-2xl soft-shadow border border-slate-200/80 dark:border-slate-800 grid grid-cols-3 gap-1.5"
+          className="bg-white dark:bg-slate-900 p-1.5 rounded-2xl soft-shadow border border-slate-200/80 dark:border-slate-800 flex items-stretch gap-1 sm:gap-1.5"
         >
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
@@ -969,21 +969,21 @@ export const App: React.FC = () => {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`py-2.5 px-2 sm:px-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer ${
+                className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 py-2 sm:py-2.5 px-1 sm:px-3 rounded-xl text-[10px] min-[375px]:text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                   isActive
                     ? 'bg-slate-900 dark:bg-brand-primary text-white shadow-sm'
                     : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80'
                 }`}
               >
                 <i
-                  className={`fa-solid ${tab.icon} text-xs ${
+                  className={`fa-solid ${tab.icon} text-[11px] sm:text-xs shrink-0 ${
                     isActive ? 'text-brand-accent dark:text-white' : 'text-slate-400 dark:text-slate-500'
                   }`}
                 ></i>
-                <span className="truncate">{tab.label}</span>
+                <span className="whitespace-normal text-center leading-tight">{tab.label}</span>
                 {tab.badge !== undefined && (
                   <span
-                    className={`text-[10px] font-en px-1.5 py-0.5 rounded-md font-extrabold ${
+                    className={`text-[9px] sm:text-[10px] font-en px-1 sm:px-1.5 py-0.5 rounded-md font-extrabold shrink-0 ${
                       isActive
                         ? 'bg-white/20 text-white'
                         : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
