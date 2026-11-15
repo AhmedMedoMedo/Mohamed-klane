@@ -20,6 +20,7 @@ import {
 } from 'firebase/firestore';
 import { Header } from './components/Header';
 import { OfflineBanner } from './components/OfflineBanner';
+import { GlobalDateFilter, GlobalDateFilterType } from './components/GlobalDateFilter';
 import { KpiCards } from './components/KpiCards';
 import { AddStockSection, AddStockData } from './components/AddStockSection';
 import { WithdrawSection } from './components/WithdrawSection';
@@ -28,7 +29,7 @@ import { SalesLogSection } from './components/SalesLogSection';
 import { EditModal } from './components/EditModal';
 import { ConfirmModal } from './components/ConfirmModal';
 import { ToastContainer, ToastMessage } from './components/Toast';
-import { formatCartonBreakdown, getCurrentTimeString, normalizeArabic } from './utils/formatters';
+import { getCurrentTimeString, normalizeArabic, parseTimestamp } from './utils/formatters';
 import { useOnlineStatus } from './utils/useOnlineStatus';
 import {
   getSyncQueue,
@@ -40,6 +41,9 @@ import {
 
 const STORAGE_KEY_INVENTORY = 'mk_system_inventory_v1';
 const STORAGE_KEY_LOGS = 'mk_system_logs_v1';
+const STORAGE_KEY_DARK_MODE = 'mk_system_dark_mode_v1';
+
+type AppTab = 'dashboard' | 'inventory' | 'logs';
 
 export const App: React.FC = () => {
   // حالة اتصال الإنترنت والمزامنة
@@ -96,8 +100,37 @@ export const App: React.FC = () => {
     onConfirm: () => {},
   });
 
-  // Track filtered logs for KPI updates
-  const [activeFilteredLogs, setActiveFilteredLogs] = useState<WithdrawalLog[]>(logs);
+  // التبويب النشط (التنقل بين الصفحات)
+  const [activeTab, setActiveTab] = useState<AppTab>('dashboard');
+
+  // الوضع الليلي (Dark Mode)
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEY_DARK_MODE) === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isDarkMode) {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    try {
+      localStorage.setItem(STORAGE_KEY_DARK_MODE, String(isDarkMode));
+    } catch {
+      // ignore storage errors
+    }
+  }, [isDarkMode]);
+
+  // حالة فلتر التاريخ العام (يرتبط بمؤشرات الأرباح وسجل المسحوبات معاً)
+  const todayInput = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const [dateFilter, setDateFilter] = useState<GlobalDateFilterType>('all');
+  const [startDate, setStartDate] = useState<string>(todayInput);
+  const [endDate, setEndDate] = useState<string>(todayInput);
 
   const showNotification = useCallback((message: string, type: 'success' | 'error' | 'info' = 'success') => {
     const id = Date.now().toString() + Math.random().toString(36).substring(2, 5);
@@ -265,13 +298,16 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  // Helper to scroll to any section smoothly
-  const scrollToSection = (id: string) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+  // Helper to scroll to any section smoothly (switches to dashboard tab if needed)
+  const scrollToSection = useCallback((id: string) => {
+    setActiveTab('dashboard');
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 60);
+  }, []);
 
   // Add or increment stock (مع دعم العمل بدون إنترنت والمزامنة التلقائية)
   const handleAddStock = async (data: AddStockData) => {
@@ -762,21 +798,107 @@ export const App: React.FC = () => {
     };
   }, [inventory]);
 
-  // Realized profit and income from active filtered logs
+  // Helper shared between Logs and Inventory for Global Date Filter
+  const isInGlobalDateRange = useCallback(
+    (timestampMs: number) => {
+      if (dateFilter === 'all') return true;
+      if (!timestampMs) return false;
+
+      const now = new Date();
+      if (dateFilter === 'today') {
+        const startOfToday = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+          0,
+          0,
+          0,
+          0
+        ).getTime();
+        return timestampMs >= startOfToday;
+      }
+      if (dateFilter === 'week') {
+        return timestampMs >= now.getTime() - 7 * 24 * 60 * 60 * 1000;
+      }
+      if (dateFilter === 'month') {
+        return timestampMs >= now.getTime() - 30 * 24 * 60 * 60 * 1000;
+      }
+      if (dateFilter === 'custom') {
+        const startMs = startDate ? new Date(`${startDate}T00:00:00`).getTime() : 0;
+        const endMs = endDate ? new Date(`${endDate}T23:59:59.999`).getTime() : Number.MAX_SAFE_INTEGER;
+        return timestampMs >= startMs && timestampMs <= endMs;
+      }
+      return true;
+    },
+    [dateFilter, startDate, endDate]
+  );
+
+  // Global date filter computation (filters KPI profits/income, SalesLogSection, and InventorySection)
+  const globallyFilteredLogs = useMemo(() => {
+    if (dateFilter === 'all') return logs;
+    return logs.filter((log) => isInGlobalDateRange(parseTimestamp(log.createdAt)));
+  }, [logs, dateFilter, isInGlobalDateRange]);
+
+  const globallyFilteredInventory = useMemo(() => {
+    if (dateFilter === 'all') return inventory;
+
+    return inventory.filter((item) => {
+      const createdMs = parseTimestamp(item.createdAt);
+      const lastAddedMs = parseTimestamp(item.lastAddedAt);
+      const fallbackIdMs =
+        !createdMs && !lastAddedMs && item.id?.startsWith('item_')
+          ? Number(item.id.replace('item_', '')) || 0
+          : 0;
+
+      const hasMatchingHistory =
+        Array.isArray(item.additionHistory) &&
+        item.additionHistory.some((rec) => isInGlobalDateRange(parseTimestamp(rec.timestamp)));
+
+      return (
+        isInGlobalDateRange(createdMs) ||
+        isInGlobalDateRange(lastAddedMs) ||
+        isInGlobalDateRange(fallbackIdMs) ||
+        hasMatchingHistory
+      );
+    });
+  }, [inventory, dateFilter, isInGlobalDateRange]);
+
+  const dateFilterLabel = useMemo(() => {
+    switch (dateFilter) {
+      case 'today':
+        return 'النهاردة';
+      case 'week':
+        return 'آخر 7 أيام';
+      case 'month':
+        return 'آخر 30 يوم';
+      case 'custom':
+        return startDate && endDate ? `${startDate} ← ${endDate}` : 'فترة مخصصة';
+      default:
+        return 'كل الأوقات';
+    }
+  }, [dateFilter, startDate, endDate]);
+
+  // Realized profit and income from globally filtered logs
   const { realizedProfit, totalIncome } = useMemo(() => {
     let income = 0;
     let profit = 0;
 
-    activeFilteredLogs.forEach((l) => {
+    globallyFilteredLogs.forEach((l) => {
       income += Number(l.incomeValue || 0);
       profit += Number(l.profit || 0);
     });
 
     return { realizedProfit: profit, totalIncome: income };
-  }, [activeFilteredLogs]);
+  }, [globallyFilteredLogs]);
+
+  const tabs: { id: AppTab; label: string; icon: string; badge?: number }[] = [
+    { id: 'dashboard', label: 'الرئيسية', icon: 'fa-house' },
+    { id: 'inventory', label: 'بضاعة المخزن', icon: 'fa-boxes-stacked', badge: globallyFilteredInventory.length },
+    { id: 'logs', label: 'سجل المسحوبات', icon: 'fa-clipboard-list', badge: globallyFilteredLogs.length },
+  ];
 
   return (
-    <div className="text-slate-800 min-h-screen flex flex-col pb-6 bg-slate-100">
+    <div className="text-slate-800 dark:text-slate-100 min-h-screen flex flex-col pb-6 bg-slate-100 dark:bg-slate-950 transition-colors duration-200">
       {/* Toast Notification Container */}
       <ToastContainer toasts={toasts} />
 
@@ -799,7 +921,7 @@ export const App: React.FC = () => {
         onSave={handleSaveEdit}
       />
 
-      {/* Header مع مؤشرات السحابة والاتصال والـ PWA */}
+      {/* Header مع مؤشرات السحابة والاتصال والوضع الليلي والـ PWA */}
       <Header
         onClearAll={handleClearAll}
         onScrollTo={scrollToSection}
@@ -809,6 +931,8 @@ export const App: React.FC = () => {
         isSyncing={isSyncing}
         onTriggerSync={() => runCloudSync(true)}
         lastSyncTime={lastSyncTime}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={() => setIsDarkMode((prev) => !prev)}
       />
 
       {/* شريط تنبيه وضع عدم الاتصال والمزامنة */}
@@ -819,49 +943,113 @@ export const App: React.FC = () => {
         onTriggerSync={() => runCloudSync(true)}
       />
 
-      {/* Main Content */}
-      <main className="flex-grow max-w-3xl w-full mx-auto px-4 py-5 space-y-5">
-        {/* KPI Dashboard */}
-        <KpiCards
-          totalCartons={totalCartons}
-          totalUnits={totalUnits}
-          totalAllPieces={totalAllPieces}
-          totalCost={totalCost}
-          totalSellValue={totalSellValue}
-          realizedProfit={realizedProfit}
-          totalIncome={totalIncome}
+      {/* Top Controls: Global Date Filter + Top Tabbed Navigation */}
+      <div className="max-w-4xl w-full mx-auto px-4 pt-4 space-y-3">
+        <GlobalDateFilter
+          dateFilter={dateFilter}
+          startDate={startDate}
+          endDate={endDate}
+          onDateFilterChange={setDateFilter}
+          onStartDateChange={setStartDate}
+          onEndDateChange={setEndDate}
+          filteredCount={activeTab === 'inventory' ? globallyFilteredInventory.length : globallyFilteredLogs.length}
+          totalCount={activeTab === 'inventory' ? inventory.length : logs.length}
+          unitLabel={activeTab === 'inventory' ? 'صنف' : 'حركة'}
         />
 
-        {/* Add Stock Section */}
-        <AddStockSection inventory={inventory} onAddStock={handleAddStock} />
+        {/* شريط التبويبات العلوي */}
+        <nav
+          aria-label="التنقل الرئيسي"
+          className="bg-white dark:bg-slate-900 p-1.5 rounded-2xl soft-shadow border border-slate-200/80 dark:border-slate-800 grid grid-cols-3 gap-1.5"
+        >
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`py-2.5 px-2 sm:px-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer ${
+                  isActive
+                    ? 'bg-slate-900 dark:bg-brand-primary text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80'
+                }`}
+              >
+                <i
+                  className={`fa-solid ${tab.icon} text-xs ${
+                    isActive ? 'text-brand-accent dark:text-white' : 'text-slate-400 dark:text-slate-500'
+                  }`}
+                ></i>
+                <span className="truncate">{tab.label}</span>
+                {tab.badge !== undefined && (
+                  <span
+                    className={`text-[10px] font-en px-1.5 py-0.5 rounded-md font-extrabold ${
+                      isActive
+                        ? 'bg-white/20 text-white'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    {tab.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+      </div>
 
-        {/* Withdraw Section */}
-        <WithdrawSection
-          inventory={inventory}
-          selectedItemId={selectedItemId}
-          onSelectItemId={setSelectedItemId}
-          onWithdraw={handleWithdraw}
-        />
+      {/* Main Content (Active Tab Only) */}
+      <main className="flex-grow max-w-4xl w-full mx-auto px-4 py-4 space-y-5">
+        {activeTab === 'dashboard' && (
+          <div className="space-y-5 animate-fade">
+            {/* KPI Dashboard */}
+            <KpiCards
+              totalCartons={totalCartons}
+              totalUnits={totalUnits}
+              totalAllPieces={totalAllPieces}
+              totalCost={totalCost}
+              totalSellValue={totalSellValue}
+              realizedProfit={realizedProfit}
+              totalIncome={totalIncome}
+              dateFilterLabel={dateFilter !== 'all' ? dateFilterLabel : undefined}
+            />
 
-        {/* Inventory Table/Cards Section */}
-        <InventorySection
-          inventory={inventory}
-          onQuickWithdraw={handleQuickWithdraw}
-          onEditItem={handleOpenEdit}
-          onDeleteItem={handleDeleteItem}
-        />
+            {/* Add Stock Section */}
+            <AddStockSection inventory={inventory} onAddStock={handleAddStock} />
 
-        {/* Sales Logs Section (سجل المسحوبات) */}
-        <SalesLogSection
-          logs={logs}
-          onFilteredLogsChange={setActiveFilteredLogs}
-          onDeleteLog={handleDeleteLog}
-        />
+            {/* Withdraw Section */}
+            <WithdrawSection
+              inventory={inventory}
+              selectedItemId={selectedItemId}
+              onSelectItemId={setSelectedItemId}
+              onWithdraw={handleWithdraw}
+            />
+          </div>
+        )}
+
+        {activeTab === 'inventory' && (
+          <InventorySection
+            inventory={globallyFilteredInventory}
+            totalInventoryCount={inventory.length}
+            activeDateLabel={dateFilterLabel}
+            onQuickWithdraw={handleQuickWithdraw}
+            onEditItem={handleOpenEdit}
+            onDeleteItem={handleDeleteItem}
+          />
+        )}
+
+        {activeTab === 'logs' && (
+          <SalesLogSection
+            logs={globallyFilteredLogs}
+            onDeleteLog={handleDeleteLog}
+            activeDateLabel={dateFilterLabel}
+          />
+        )}
       </main>
 
       {/* Footer */}
-      <footer className="text-center text-xs text-slate-400 py-4 border-t border-slate-200 mt-auto flex flex-col items-center justify-center gap-1">
-        <div className="flex items-center gap-2 text-slate-500 font-bold">
+      <footer className="text-center text-xs text-slate-400 dark:text-slate-500 py-4 border-t border-slate-200 dark:border-slate-800 mt-auto flex flex-col items-center justify-center gap-1">
+        <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-bold">
           <span>MK SYSTEM</span>
           <span>•</span>
           <span className="flex items-center gap-1">
@@ -869,7 +1057,9 @@ export const App: React.FC = () => {
             {isOnline ? 'مزامنة سحابية نشطة' : 'وضع أوفلاين محلي'}
           </span>
         </div>
-        <p className="text-[11px] text-slate-400">يعمل بدون إنترنت وتتم المزامنة تلقائياً مع السحابة فور عودة الاتصال</p>
+        <p className="text-[11px] text-slate-400 dark:text-slate-500">
+          يعمل بدون إنترنت وتتم المزامنة تلقائياً مع السحابة فور عودة الاتصال
+        </p>
       </footer>
     </div>
   );

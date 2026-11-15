@@ -342,16 +342,16 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
       : qtyNumber;
 
   return (
-    <section id="sectionAdd" className="bg-white rounded-2xl soft-shadow overflow-hidden scroll-mt-28">
-      <div className="bg-slate-50 px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+    <section id="sectionAdd" className="bg-white dark:bg-slate-900 rounded-2xl soft-shadow border border-slate-200/70 dark:border-slate-800 overflow-hidden scroll-mt-28">
+      <div className="bg-slate-50 dark:bg-slate-800/70 px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="text-emerald-500 text-lg">
             <i className="fa-solid fa-circle-plus"></i>
           </div>
-          <h3 className="font-bold text-slate-800">دخّل بضاعة جديدة للمخزن</h3>
+          <h3 className="font-bold text-slate-800 dark:text-white">دخّل بضاعة جديدة للمخزن</h3>
         </div>
         {selectedItem && (
-          <span className="text-[11px] bg-emerald-100 text-emerald-800 font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+          <span className="text-[11px] bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200 dark:border-emerald-800">
             <i className="fa-solid fa-circle-check"></i> منتج مسجل بالمخزن
           </span>
         )}
@@ -361,14 +361,14 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
         {/* اختيار / البحث عن الصنف */}
         <div className="relative" ref={dropdownRef}>
           <div className="flex justify-between items-center mb-1.5">
-            <label className="block text-xs font-bold text-slate-600">
+            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">
               اسم البضاعة (ابحث للزيادة أو اكتب صنف جديد) <span className="text-red-500">*</span>
             </label>
             {selectedItem && (
               <button
                 type="button"
                 onClick={handleClearSelected}
-                className="text-[11px] text-blue-600 hover:text-blue-800 font-bold underline cursor-pointer flex items-center gap-1"
+                className="text-[11px] text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-bold underline cursor-pointer flex items-center gap-1"
               >
                 <i className="fa-solid fa-rotate-left"></i> إلغاء التحديد (تسجيل صنف جديد)
               </button>
@@ -388,10 +388,10 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
               }}
               onFocus={() => setIsDropdownOpen(true)}
               placeholder="ابحث بالاسم أو اكتب اسم بضاعة جديدة (مثال: كشاف ليد)..."
-              className={`w-full border rounded-xl px-4 py-2.5 text-sm outline-none transition ${
+              className={`w-full border rounded-xl px-4 py-2.5 text-sm outline-none transition placeholder:text-slate-400 dark:placeholder:text-slate-500 ${
                 selectedItem
-                  ? 'bg-emerald-50/40 border-emerald-300 text-emerald-950 font-bold'
-                  : 'bg-slate-50 border-slate-200 focus:border-brand-primary'
+                  ? 'bg-emerald-50/40 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-700 text-emerald-950 dark:text-emerald-200 font-bold'
+                  : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white focus:border-brand-primary'
               }`}
             />
             {name && !selectedItem && (
@@ -401,7 +401,7 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
                   setName('');
                   setIsDropdownOpen(false);
                 }}
-                className="absolute left-3 top-3 text-slate-400 hover:text-slate-600 text-sm cursor-pointer"
+                className="absolute left-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm cursor-pointer"
               >
                 <i className="fa-solid fa-xmark"></i>
               </button>
@@ -410,20 +410,20 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
 
           {/* معلومات المنتج المسجل مسبقاً إذا تم اختياره */}
           {selectedItem && (
-            <div className="mt-2 p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs animate-fade">
+            <div className="mt-2 p-2.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-xl flex items-center justify-between text-xs animate-fade">
               <div className="flex items-center gap-2">
-                <i className="fa-solid fa-warehouse text-emerald-600"></i>
+                <i className="fa-solid fa-warehouse text-emerald-600 dark:text-emerald-400"></i>
                 <div>
-                  <span className="font-bold text-emerald-900">{selectedItem.name}</span>
-                  <span className="text-slate-600 mr-2 text-[11px]">
+                  <span className="font-bold text-emerald-900 dark:text-emerald-200">{selectedItem.name}</span>
+                  <span className="text-slate-600 dark:text-slate-300 mr-2 text-[11px]">
                     الرصيد الحالي بالمخزن:{' '}
-                    <strong className="text-emerald-700">
+                    <strong className="text-emerald-700 dark:text-emerald-400">
                       {formatCartonBreakdown(selectedItem.totalUnits, selectedItem.unitsPerCarton, selectedItem.cartons, selectedItem.looseUnits)}
                     </strong>
                   </span>
                 </div>
               </div>
-              <span className="text-[10px] bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded font-bold">
+              <span className="text-[10px] bg-emerald-200 dark:bg-emerald-900/70 text-emerald-900 dark:text-emerald-200 px-2 py-0.5 rounded font-bold">
                 سيتم زيادة الرصيد تلقائياً
               </span>
             </div>
@@ -431,27 +431,27 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
 
           {/* قائمة البحث السريع المنبثقة */}
           {isDropdownOpen && !selectedItem && name.trim().length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden max-h-56 overflow-y-auto animate-fade">
-              <div className="p-2 bg-slate-50 text-[11px] font-bold text-slate-500 border-b border-slate-100 flex justify-between">
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-20 overflow-hidden max-h-56 overflow-y-auto animate-fade">
+              <div className="p-2 bg-slate-50 dark:bg-slate-800 text-[11px] font-bold text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-700 flex justify-between">
                 <span>نتائج البحث في المخزن ({filteredSuggestions.length})</span>
-                <span className="text-[10px] text-slate-400">اختر لزيادة الرصيد فوراً</span>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500">اختر لزيادة الرصيد فوراً</span>
               </div>
               {filteredSuggestions.length > 0 ? (
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
                   {filteredSuggestions.map((item) => (
                     <div
                       key={item.id}
                       onClick={() => handleSelectExistingItem(item)}
-                      className="p-3 hover:bg-blue-50 cursor-pointer transition flex items-center justify-between"
+                      className="p-3 hover:bg-blue-50 dark:hover:bg-slate-800 cursor-pointer transition flex items-center justify-between"
                     >
                       <div>
-                        <div className="font-bold text-sm text-slate-800">{item.name}</div>
-                        <div className="text-[11px] text-slate-500">
+                        <div className="font-bold text-sm text-slate-800 dark:text-white">{item.name}</div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400">
                           الرصيد المتاح: {formatCartonBreakdown(item.totalUnits, item.unitsPerCarton, item.cartons, item.looseUnits)}
                         </div>
                       </div>
                       <div className="text-left text-[11px]">
-                        <span className="text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded">
+                        <span className="text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/60 px-2 py-1 rounded">
                           تكلفة: {formatMoney(item.unitBuyPrice)}
                         </span>
                       </div>
@@ -459,7 +459,7 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
                   ))}
                 </div>
               ) : (
-                <div className="p-3 text-center text-xs text-slate-500">
+                <div className="p-3 text-center text-xs text-slate-500 dark:text-slate-400">
                   <i className="fa-solid fa-sparkles text-amber-500 ml-1"></i>
                   صنف جديد غير مسجل، سيتم حفظه في المخزن بالبيانات التالية
                 </div>
@@ -469,8 +469,8 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
         </div>
 
         {/* اختيار الإضافة بكرتونة أو بقطع فرط */}
-        <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-          <label className="block text-xs font-bold text-slate-700 mb-2">
+        <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700/80">
+          <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-2">
             هتضيف إيه للمخزن؟ <span className="text-red-500">*</span>
           </label>
           <div className="grid grid-cols-2 gap-2">
@@ -480,7 +480,7 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
               className={`py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer border ${
                 addType === 'cartons'
                   ? 'bg-brand-primary text-white border-brand-primary shadow-sm'
-                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <i className="fa-solid fa-boxes-stacked"></i>
@@ -492,7 +492,7 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
               className={`py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer border ${
                 addType === 'units'
                   ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <i className="fa-solid fa-shapes"></i>
@@ -505,7 +505,7 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
         {addType === 'cartons' ? (
           <div className="grid grid-cols-2 gap-3 animate-fade">
             <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1.5">
+              <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
                 جبت كام كرتونة؟ <span className="text-red-500">*</span>
               </label>
               <input
@@ -515,16 +515,16 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
                 value={quantity}
                 onChange={(e) => handleQuantityChange(e.target.value)}
                 placeholder="مثال: 5"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-en outline-none focus:border-brand-primary"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl px-4 py-2.5 text-sm font-en outline-none focus:border-brand-primary"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1.5 flex items-center justify-between">
+              <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5 flex items-center justify-between">
                 <span>
                   الكرتونة فيها كام قطعة؟ <span className="text-red-500">*</span>
                 </span>
                 {selectedItem && (selectedItem.totalUnits || 0) <= 0 && (
-                  <span className="text-[10px] text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                  <span className="text-[10px] text-amber-700 dark:text-amber-300 font-bold bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800">
                     حدد سعة الكرتونة الجديدة
                   </span>
                 )}
@@ -536,13 +536,13 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
                 value={unitsPerCarton}
                 onChange={(e) => handleUnitsPerCartonInput(e.target.value)}
                 placeholder="مثال: 12 أو 24 أو 50"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-en outline-none focus:border-brand-primary"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl px-4 py-2.5 text-sm font-en outline-none focus:border-brand-primary"
               />
             </div>
           </div>
         ) : (
           <div className="animate-fade">
-            <label className="block text-xs font-bold text-slate-600 mb-1.5">
+            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">
               جبت كام قطعة فرط؟ <span className="text-red-500">*</span>
             </label>
             <input
@@ -552,36 +552,36 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
               value={quantity}
               onChange={(e) => handleQuantityChange(e.target.value)}
               placeholder="اكتب عدد القطع الفرط (مثال: 10)..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-en outline-none focus:border-emerald-600"
+              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl px-4 py-2.5 text-sm font-en outline-none focus:border-emerald-600"
             />
           </div>
         )}
 
         {/* ملخص الكمية المضافة الحالية */}
         {qtyNumber > 0 && (
-          <div className="p-2 bg-blue-50/70 border border-blue-100 rounded-xl flex items-center justify-between text-xs text-blue-900 animate-fade">
+          <div className="p-2.5 bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/50 rounded-xl flex items-center justify-between text-xs text-blue-900 dark:text-blue-200 animate-fade">
             <span>
-              <i className="fa-solid fa-arrow-down-short-wide ml-1 text-blue-600"></i>
+              <i className="fa-solid fa-arrow-down-short-wide ml-1 text-blue-600 dark:text-blue-400"></i>
               إجمالي القطع المضافة للرصيد:{' '}
-              <strong className="font-en text-sm text-blue-700">{calculatedAddedUnits}</strong> قطعة
+              <strong className="font-en text-sm text-blue-700 dark:text-blue-300">{calculatedAddedUnits}</strong> قطعة
             </span>
             {addType === 'cartons' && (
-              <span className="text-[11px] text-blue-600 font-bold">
+              <span className="text-[11px] text-blue-600 dark:text-blue-400 font-bold">
                 ({qtyNumber} كرتونة × {unitsPerCarton} قطعة)
               </span>
             )}
           </div>
         )}
 
-        {/* الأسعار اللي اشتريت بيها (التكلفة) - تتغير بذكاء حسب كرتونة أو قطع فرط */}
-        <div className="bg-amber-50/50 rounded-xl p-3 border border-amber-100 relative">
-          <span className="absolute top-2 left-2 text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-bold">
+        {/* الأسعار اللي اشتريت بيها (التكلفة) */}
+        <div className="bg-amber-50/50 dark:bg-amber-950/20 rounded-xl p-3 border border-amber-100 dark:border-amber-900/40 relative">
+          <span className="absolute top-2 left-2 text-[10px] bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded font-bold">
             {addType === 'units'
               ? `حساب تكلفة الـ ${qtyNumber > 0 ? qtyNumber : ''} قطع`
               : 'حساب تلقائي للكرتونة'}
           </span>
 
-          <div className="text-xs font-bold text-amber-800 mb-2 flex items-center gap-1">
+          <div className="text-xs font-bold text-amber-800 dark:text-amber-300 mb-2 flex items-center gap-1">
             <i className="fa-solid fa-money-bill-wave"></i>
             {addType === 'units'
               ? 'الأسعار اللي اشتريت بيها (تكلفة القطع الفرط)'
@@ -589,10 +589,9 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
           </div>
 
           {addType === 'units' ? (
-            /* نظام حساب التكلفة للقطع الفرط */
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10px] text-slate-500 mb-1">
+                <label className="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">
                   القطعة الواحدة واقفة بكام؟ <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -603,11 +602,11 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
                   value={unitBuyPrice}
                   onChange={(e) => handleUnitBuyChange(e.target.value)}
                   placeholder="0.00"
-                  className="w-full bg-white border border-amber-200 rounded-lg px-3 py-2 text-sm font-en outline-none focus:border-amber-400"
+                  className="w-full bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800/60 text-slate-800 dark:text-white rounded-lg px-3 py-2 text-sm font-en outline-none focus:border-amber-400"
                 />
               </div>
               <div>
-                <label className="block text-[10px] text-slate-500 mb-1">
+                <label className="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">
                   إجمالي تكلفة الـ {qtyNumber > 0 ? qtyNumber : ''} قطع كلها؟ <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -618,15 +617,14 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
                   value={totalBatchBuyPrice}
                   onChange={(e) => handleTotalBatchBuyChange(e.target.value)}
                   placeholder="0.00"
-                  className="w-full bg-white border border-amber-200 rounded-lg px-3 py-2 text-sm font-en outline-none focus:border-amber-400 font-bold text-amber-900"
+                  className="w-full bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800/60 rounded-lg px-3 py-2 text-sm font-en outline-none focus:border-amber-400 font-bold text-amber-900 dark:text-amber-300"
                 />
               </div>
             </div>
           ) : (
-            /* نظام حساب التكلفة للكراتين */
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10px] text-slate-500 mb-1">
+                <label className="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">
                   القطعة واقفة بكام؟ <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -637,11 +635,11 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
                   value={unitBuyPrice}
                   onChange={(e) => handleUnitBuyChange(e.target.value)}
                   placeholder="0.00"
-                  className="w-full bg-white border border-amber-200 rounded-lg px-3 py-2 text-sm font-en outline-none focus:border-amber-400"
+                  className="w-full bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800/60 text-slate-800 dark:text-white rounded-lg px-3 py-2 text-sm font-en outline-none focus:border-amber-400"
                 />
               </div>
               <div>
-                <label className="block text-[10px] text-slate-500 mb-1">
+                <label className="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">
                   الكرتونة بكام؟ <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -652,22 +650,22 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
                   value={cartonBuyPrice}
                   onChange={(e) => handleCartonBuyChange(e.target.value)}
                   placeholder="0.00"
-                  className="w-full bg-white border border-amber-200 rounded-lg px-3 py-2 text-sm font-en outline-none focus:border-amber-400"
+                  className="w-full bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800/60 text-slate-800 dark:text-white rounded-lg px-3 py-2 text-sm font-en outline-none focus:border-amber-400"
                 />
               </div>
             </div>
           )}
         </div>
 
-        {/* هتبيع بكام؟ (سعر البيع) - يتغير بذكاء حسب كرتونة أو قطع فرط */}
-        <div className="bg-indigo-50/50 rounded-xl p-3 border border-indigo-100 relative">
-          <span className="absolute top-2 left-2 text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-bold">
+        {/* هتبيع بكام؟ (سعر البيع) */}
+        <div className="bg-indigo-50/50 dark:bg-indigo-950/20 rounded-xl p-3 border border-indigo-100 dark:border-indigo-900/40 relative">
+          <span className="absolute top-2 left-2 text-[10px] bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded font-bold">
             {addType === 'units'
               ? `حساب بيع الـ ${qtyNumber > 0 ? qtyNumber : ''} قطع`
               : 'حساب تلقائي للكرتونة'}
           </span>
 
-          <div className="text-xs font-bold text-indigo-800 mb-2 flex items-center gap-1">
+          <div className="text-xs font-bold text-indigo-800 dark:text-indigo-300 mb-2 flex items-center gap-1">
             <i className="fa-solid fa-tags"></i>
             {addType === 'units'
               ? 'هتبيع بكام؟ (سعر بيع القطع الفرط)'
@@ -675,10 +673,9 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
           </div>
 
           {addType === 'units' ? (
-            /* نظام حساب البيع للقطع الفرط */
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10px] text-slate-500 mb-1">
+                <label className="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">
                   هتبيع القطعة الواحدة بكام؟ <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -689,11 +686,11 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
                   value={unitSellPrice}
                   onChange={(e) => handleUnitSellChange(e.target.value)}
                   placeholder="0.00"
-                  className="w-full bg-white border border-indigo-200 rounded-lg px-3 py-2 text-sm font-en outline-none focus:border-indigo-400"
+                  className="w-full bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800/60 text-slate-800 dark:text-white rounded-lg px-3 py-2 text-sm font-en outline-none focus:border-indigo-400"
                 />
               </div>
               <div>
-                <label className="block text-[10px] text-slate-500 mb-1">
+                <label className="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">
                   إجمالي بيع الـ {qtyNumber > 0 ? qtyNumber : ''} قطع كلها؟ <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -704,15 +701,14 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
                   value={totalBatchSellPrice}
                   onChange={(e) => handleTotalBatchSellChange(e.target.value)}
                   placeholder="0.00"
-                  className="w-full bg-white border border-indigo-200 rounded-lg px-3 py-2 text-sm font-en outline-none focus:border-indigo-400 font-bold text-indigo-900"
+                  className="w-full bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800/60 rounded-lg px-3 py-2 text-sm font-en outline-none focus:border-indigo-400 font-bold text-indigo-900 dark:text-indigo-300"
                 />
               </div>
             </div>
           ) : (
-            /* نظام حساب البيع للكراتين */
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10px] text-slate-500 mb-1">
+                <label className="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">
                   هتبيع القطعة بكام؟ <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -723,11 +719,11 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
                   value={unitSellPrice}
                   onChange={(e) => handleUnitSellChange(e.target.value)}
                   placeholder="0.00"
-                  className="w-full bg-white border border-indigo-200 rounded-lg px-3 py-2 text-sm font-en outline-none focus:border-indigo-400"
+                  className="w-full bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800/60 text-slate-800 dark:text-white rounded-lg px-3 py-2 text-sm font-en outline-none focus:border-indigo-400"
                 />
               </div>
               <div>
-                <label className="block text-[10px] text-slate-500 mb-1">
+                <label className="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">
                   هتبيع الكرتونة بكام؟ <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -738,7 +734,7 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
                   value={cartonSellPrice}
                   onChange={(e) => handleCartonSellChange(e.target.value)}
                   placeholder="0.00"
-                  className="w-full bg-white border border-indigo-200 rounded-lg px-3 py-2 text-sm font-en outline-none focus:border-indigo-400"
+                  className="w-full bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800/60 text-slate-800 dark:text-white rounded-lg px-3 py-2 text-sm font-en outline-none focus:border-indigo-400"
                 />
               </div>
             </div>
@@ -746,13 +742,13 @@ export const AddStockSection: React.FC<AddStockSectionProps> = ({
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-slate-600 mb-1.5">ملاحظات (اختياري)</label>
+          <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">ملاحظات (اختياري)</label>
           <input
             type="text"
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="مثال: اسم المورد، تاريخ الصلاحية..."
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-primary"
+            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-primary placeholder:text-slate-400 dark:placeholder:text-slate-500"
           />
         </div>
 

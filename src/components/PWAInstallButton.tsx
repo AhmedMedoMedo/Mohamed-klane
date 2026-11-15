@@ -39,35 +39,35 @@ export const PWAInstallButton: React.FC = () => {
 
         {showIOSGuide && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade">
-            <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl text-slate-800 space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <i className="fa-brands fa-apple text-lg text-slate-900"></i>
+            <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 p-5 shadow-2xl text-slate-800 dark:text-slate-100 space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <i className="fa-brands fa-apple text-lg text-slate-900 dark:text-white"></i>
                   <span>تثبيت MK System على الآيفون</span>
                 </h3>
                 <button
                   onClick={() => setShowIOSGuide(false)}
-                  className="w-7 h-7 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center cursor-pointer"
+                  className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center cursor-pointer"
                 >
                   <i className="fa-solid fa-xmark"></i>
                 </button>
               </div>
-              <p className="text-xs text-slate-600 leading-relaxed">
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                 للعمل بالتطبيق بدون إنترنت وبشاشة كاملة كأي تطبيق مثبت:
               </p>
-              <div className="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
+              <div className="space-y-2 bg-slate-50 dark:bg-slate-800/70 p-3 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
                 <div className="flex items-start gap-2">
-                  <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[11px] shrink-0">1</span>
+                  <span className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 flex items-center justify-center font-bold text-[11px] shrink-0">1</span>
                   <span>اضغط على زر المشاركة <strong>(Share / <i className="fa-solid fa-arrow-up-from-bracket"></i>)</strong> في شريط متصفح سفاري.</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[11px] shrink-0">2</span>
+                  <span className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 flex items-center justify-center font-bold text-[11px] shrink-0">2</span>
                   <span>مرر للأسفل واضغط على <strong>إضافة إلى الشاشة الرئيسية (Add to Home Screen)</strong>.</span>
                 </div>
               </div>
               <button
                 onClick={() => setShowIOSGuide(false)}
-                className="w-full rounded-xl bg-slate-800 hover:bg-slate-900 py-2.5 text-xs font-bold text-white transition cursor-pointer"
+                className="w-full rounded-xl bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 py-2.5 text-xs font-bold text-white transition cursor-pointer"
               >
                 فهمت، حسناً
               </button>
